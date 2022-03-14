@@ -1,10 +1,23 @@
 SimplyAgree R Package
 ================
 
-[![Build
-Status](https://travis-ci.com/arcaldwell49/SimplyAgree.svg?branch=master)](https://travis-ci.com/arcaldwell49/SimplyAgree)
+<img src="https://raw.githubusercontent.com/arcaldwell49/SimplyAgree/master/images/sticker.png" width="150" height="150" />
+
+*Artwork courtesy of Chelsea Parlett Pelleriti*
+
+<!-- badges: start -->
+
 [![Codecov test
-coverage](https://codecov.io/gh/arcaldwell49/SimplyAgree/branch/master/graph/badge.svg)](https://codecov.io/gh/arcaldwell49/SimplyAgree?branch=master)
+coverage](https://codecov.io/gh/arcaldwell49/SimplyAgree/branch/master/graph/badge.svg)](https://app.codecov.io/gh/arcaldwell49/SimplyAgree?branch=master)
+[![R-CMD-check](https://github.com/arcaldwell49/SimplyAgree/workflows/R-CMD-check/badge.svg)](https://github.com/arcaldwell49/SimplyAgree/actions)
+[![documentation](https://img.shields.io/badge/website-active-blue)](https://aaroncaldwell.us/SimplyAgree/)
+<!-- badges: end -->
+
+Please see the package’s
+[website](https://aaroncaldwell.us/SimplyAgree/) for updates, vignettes,
+and other details about the package.
+
+# Background
 
 `SimplyAgree` is an R package, and [jamovi](https://www.jamovi.org/)
 module, created to make agreement and reliability analyses easier for
@@ -24,7 +37,28 @@ You can install the most up-to-date version of `SimplyAgree` from
 devtools::install_github("arcaldwell49/SimplyAgree")
 ```
 
-## References
+# Contributing
+
+We are happy to receive bug reports, suggestions, questions, and (most
+of all) contributions to fix problems and add features. Pull Requests
+for contributions are encouraged.
+
+Here are some simple ways in which you can contribute (in the increasing
+order of commitment):
+
+-   Read and correct any inconsistencies in the documentation
+-   Raise issues about bugs or wanted features
+-   Review code
+-   Add new functionality
+
+## Code of Conduct
+
+Please note that the concurve project is released with a [Contributor
+Code of
+Conduct](https://aaroncaldwell.us/SimplyAgree/CODE_OF_CONDUCT.html). By
+contributing to this project, you agree to abide by its terms.
+
+# References
 
 The functions in this package are largely based on the following works:
 
