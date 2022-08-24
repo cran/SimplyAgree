@@ -1,35 +1,18 @@
 ## ---- include = FALSE---------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
+  eval = TRUE,
   comment = "#>"
 )
 
 ## ----setup, message=FALSE,warning=FALSE---------------------------------------
 library(SimplyAgree)
-library(cccrm)
 library(tidyverse)
-library(ggpubr)
 data("temps")
 df_temps = temps
 
 ## ---- fig.cap="Example of the Line of Identity"-------------------------------
 qplot(1,1) + geom_abline(intercept = 0, slope = 1)
-
-## -----------------------------------------------------------------------------
-ccc_rec.post = cccrm::cccUst(dataset = df_temps,
-                            ry = "trec_post",
-                            rtime = "trial_condition",
-                            rmet = "tod")
-
-ccc_rec.post
-
-## -----------------------------------------------------------------------------
-ccc_rec.delta = cccrm::cccUst(dataset = df_temps,
-                            ry = "trec_delta",
-                            rtime = "trial_condition",
-                            rmet = "tod")
-
-ccc_rec.delta
 
 ## ----pltsrec,fig.cap="Concordance Plots of Rectal Temperature",echo=FALSE,fig.width=8.5,fig.height=5----
 df_rec.delta = df_temps %>%
@@ -85,23 +68,8 @@ p_rec.post <- ggplot(df_rec.post, aes(x=AM, y=PM)) +
   theme_classic() +
   theme(legend.position = "bottom") +
   scale_color_viridis_d()
-ggarrange(p_rec.post,p_rec.delta)
-
-## -----------------------------------------------------------------------------
-ccc_eso.post = cccrm::cccUst(dataset = df_temps,
-                            ry = "teso_post",
-                            rtime = "trial_condition",
-                            rmet = "tod")
-
-ccc_eso.post
-
-## -----------------------------------------------------------------------------
-ccc_eso.delta = cccrm::cccUst(dataset = df_temps,
-                            ry = "teso_delta",
-                            rtime = "trial_condition",
-                            rmet = "tod")
-
-ccc_eso.delta
+p_rec.post
+p_rec.delta
 
 ## ----pltseso,fig.cap="Concordance Plots of Esophageal Temperature",echo=FALSE,fig.width=8.5,fig.height=5----
 df_eso.delta = df_temps %>%
@@ -157,7 +125,10 @@ p_eso.post <- ggplot(df_eso.post, aes(x=AM, y=PM)) +
   theme_classic() +
   theme(legend.position = "bottom") +
   scale_color_viridis_d()
-ggarrange(p_eso.post,p_eso.delta)
+
+p_eso.post
+
+p_eso.delta
 
 ## ---- echo=FALSE--------------------------------------------------------------
 rec.post_loa = readr::read_rds("rec_post_loa.rds")
@@ -168,14 +139,15 @@ eso.delta_loa = readr::read_rds("eso_delta_loa.rds")
 
 
 ## ---- eval=FALSE--------------------------------------------------------------
-#  rec.post_loa = SimplyAgree::loa_mixed(diff = "diff",
-#                                       condition = "trial_condition",
-#                                       id = "id",
-#                                       data = df_rec.post,
-#                                       conf.level = .95,
-#                                       agree.level = .95,
-#                                       replicates = 199,
-#                                       type = "bca")
+#  rec.post_loa = SimplyAgree::loa_lme(diff = "diff",
+#                                      condition = "trial_condition",
+#                                      id = "id",
+#                                      avg = "Average",
+#                                      data = df_rec.post,
+#                                      conf.level = .95,
+#                                      agree.level = .95,
+#                                      replicates = 199,
+#                                      type = "perc")
 
 ## -----------------------------------------------------------------------------
 knitr::kable(rec.post_loa$loa,
