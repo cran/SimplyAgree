@@ -1,7 +1,7 @@
 Package: SimplyAgree
 Type: Package
 Title: Flexible and Robust Agreement and Reliability Analyses
-Version: 0.1.0
+Version: 0.1.2
 Authors@R: person("Aaron", "Caldwell", email = "arcaldwell49@gmail.com",
                   role = c("aut", "cre"))
 Maintainer: Aaron Caldwell <arcaldwell49@gmail.com>
@@ -14,12 +14,12 @@ RoxygenNote: 7.1.2
 Imports: ggplot2, emmeans, lme4, boot, stats, dplyr, magrittr,
         tidyselect, tidyr, stringr, jmvcore, quantreg, patchwork,
         insight, nlme, purrr
-Suggests: knitr, rmarkdown, testthat, tidyverse, readr, covr, mgcv,
-        ggeffects, deming
+Suggests: knitr, rmarkdown, testthat, readr, covr, mgcv, ggeffects,
+        deming
 VignetteBuilder: knitr
 Depends: R (>= 3.6)
 NeedsCompilation: no
-Packaged: 2022-08-23 17:03:22 UTC; aaroncaldwell
+Packaged: 2022-12-15 00:27:25 UTC; arcal
 Author: Aaron Caldwell [aut, cre]
 Repository: CRAN
-Date/Publication: 2022-08-24 07:10:16 UTC
+Date/Publication: 2022-12-15 00:50:02 UTC

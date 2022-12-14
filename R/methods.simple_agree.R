@@ -141,10 +141,11 @@ print.simple_agree <- function(x,...){
 plot.simple_agree <- function(x, type = 1,
                               x_name = "x",
                               y_name = "y",
-                              geom = "geom_point",
+                              geom = c("geom_point", "geom_bin2d", "geom_density_2d", "geom_density_2d_filled", "stat_density_2d"),
                               smooth_method = NULL,
                               smooth_se = TRUE,
                               ...){
+  geom = match.arg(geom)
 
   if(type == 1){
     #return(x$bland_alt.plot)
@@ -251,7 +252,15 @@ check.simple_agree <- function(x) {
   p_het = plot_het(dat_het) +
     labs(caption = paste0("Heteroskedasticity", " \n",
                           "Breusch-Pagan Test: p = ",
-                          signif(p_val_het,4)))
+                          signif(p_val_het,4))) +
+    theme(
+      panel.background = element_rect(fill='transparent'), #transparent panel bg
+      plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+      panel.grid.major = element_blank(), #remove major gridlines
+      panel.grid.minor = element_blank(), #remove minor gridlines
+      legend.background = element_rect(fill='transparent'), #transparent legend bg
+      legend.box.background = element_rect(fill='transparent') #transparent legend panel
+    )
 
 
   ## Normality ------------
@@ -273,7 +282,15 @@ check.simple_agree <- function(x) {
   ) +
     labs(caption = paste0("Normality", " \n",
                           norm_text, ": p = ",
-                          signif(norm_test$p.value,4)))
+                          signif(norm_test$p.value,4))) +
+    theme(
+      panel.background = element_rect(fill='transparent'), #transparent panel bg
+      plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+      panel.grid.major = element_blank(), #remove major gridlines
+      panel.grid.minor = element_blank(), #remove minor gridlines
+      legend.background = element_rect(fill='transparent'), #transparent legend bg
+      legend.box.background = element_rect(fill='transparent') #transparent legend panel
+    )
 
   # Proportional Bias -----
   if(as.character(x$call[1]) == "agree_test" || as.character(x$call[1]) == "SimplyAgree::agree_test"){
@@ -295,13 +312,29 @@ check.simple_agree <- function(x) {
   p_bias = plot_bias(dat2) +
     labs(caption = paste0("Proportional Bias", " \n",
                           "Test for Linear Bias", ": p = ",
-                          signif(lin_pval,4)))
+                          signif(lin_pval,4))) +
+    theme(
+      panel.background = element_rect(fill='transparent'), #transparent panel bg
+      plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+      panel.grid.major = element_blank(), #remove major gridlines
+      panel.grid.minor = element_blank(), #remove minor gridlines
+      legend.background = element_rect(fill='transparent'), #transparent legend bg
+      legend.box.background = element_rect(fill='transparent') #transparent legend panel
+    )
 
   #return(list(p_norm = p_norm,
   #            p_het = p_het,
   #            p_bias = p_bias))
 
   wrap_plots(p_norm, p_het,
-             p_bias, ncol = 2)
+             p_bias, ncol = 2) & plot_annotation(
+               theme = theme(
+                 panel.background = element_rect(fill='transparent'), #transparent panel bg
+                 plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+                 panel.grid.major = element_blank(), #remove major gridlines
+                 panel.grid.minor = element_blank(), #remove minor gridlines
+                 legend.background = element_rect(fill='transparent'), #transparent legend bg
+                 legend.box.background = element_rect(fill='transparent') #transparent legend panel
+               ))
 
 }

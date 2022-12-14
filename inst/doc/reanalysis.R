@@ -7,7 +7,11 @@ knitr::opts_chunk$set(
 
 ## ----setup, message=FALSE,warning=FALSE---------------------------------------
 library(SimplyAgree)
-library(tidyverse)
+#library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(magrittr)
 data("temps")
 df_temps = temps
 

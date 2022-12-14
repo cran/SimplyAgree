@@ -119,7 +119,7 @@ plot(a1,
 ## ----warning=FALSE,eval=FALSE-------------------------------------------------
 #  
 #  recpre_long$avg = (recpre_long$PM + recpre_long$PM)/2
-#  a4 = loa_mixed(data = recpre_long,
+#  a4 = loa_lme(data = recpre_long,
 #                 diff = "diff",
 #                 avg = "avg",
 #                 #condition = "trial_condition",
