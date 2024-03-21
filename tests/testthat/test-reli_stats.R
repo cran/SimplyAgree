@@ -32,6 +32,15 @@ testthat::test_that("Simple Use Run Through", {
                        header=TRUE,
                        row.names=1))
 
+  expect_error(agree_coef(data = ratermat2,
+                          wide = TRUE,
+                          weighted = TRUE))
+
+  expect_error(agree_coef(data = ratermat2,
+             wide = FALSE,
+             weighted = TRUE,
+             col.names = c("Rater1", "Rater2", "Rater3", "Rater4")))
+
   irr1w = agree_coef(data = ratermat2,
                     wide = TRUE,
                     weighted = TRUE,
@@ -66,6 +75,19 @@ testthat::test_that("Simple Use Run Through", {
   rownames(sf) <- paste("S", 1:6, sep = "")
   #sf  #example from Shrout and Fleiss (1979)
   dat = as.data.frame(sf)
+
+  test1 = reli_stats(data = dat,
+                     wide = TRUE,
+                     se_type = "ICC1",
+                     col.names = c("J1", "J2", "J3", "J4"))
+  test1 = reli_stats(data = dat,
+                     wide = TRUE,
+                     cv_calc = "SEM",
+                     col.names = c("J1", "J2", "J3", "J4"))
+  test1 = reli_stats(data = dat,
+                     wide = TRUE,
+                     cv_calc = "residuals",
+                     col.names = c("J1", "J2", "J3", "J4"))
 
   test1 = reli_stats(data = dat,
                      wide = TRUE,
@@ -130,19 +152,73 @@ testthat::test_that("Simple Use Run Through", {
 
   expect_equivalent(round(test2$icc$icc,4), round(test2_aov$icc$icc,4))
   expect_equivalent(test1_aov$icc$icc, test2_aov$icc$icc)
+  test3_chi = reli_stats(data = df,
+                     measure = "va",
+                     item = "it",
+                     id = "id",
+                     other_ci = TRUE,
+                     type = "chi")
+
+  test3_chi = reli_stats(data = df,
+                         measure = "va",
+                         item = "it",
+                         id = "id",
+                         other_ci = TRUE,
+                         type = "chi",
+                         cv_calc = "resid")
+
+  test3_chi = reli_stats(data = df,
+                         measure = "va",
+                         item = "it",
+                         id = "id",
+                         other_ci = TRUE,
+                         type = "chi",
+                         cv_calc = "SEM")
 
   test3 = reli_stats(data = df,
                      measure = "va",
                      item = "it",
                      id = "id",
                      other_ci = TRUE,
+                     type = "perc",
                      replicates = 49)
-  expect_error(reli_aov(data = df,
-                          measure = "va",
-                          item = "it",
-                          id = "id",
-                          other_ci = TRUE,
-                          replicates = 49))
+
+
+  test3_aov = reli_aov(data = df,
+                     measure = "va",
+                     item = "it",
+                     id = "id",
+                     other_ci = TRUE,
+                     type = "perc",
+                     replicates = 49)
+  testthat::expect_equivalent(round(test3$icc$icc,4),
+                              round(test3_aov$icc$icc,4))
+  testthat::expect_equivalent(round(test3$var_comp$percent,4),
+                              round(test3_aov$var_comp$percent,4))
+  test3_aov = reli_aov(data = df,
+                       measure = "va",
+                       item = "it",
+                       id = "id",
+                       other_ci = TRUE,
+                       type = "chi")
+
+  test3_aov = reli_aov(data = df,
+                       measure = "va",
+                       item = "it",
+                       id = "id",
+                       other_ci = TRUE,
+                       type = "chi",
+                       cv_calc = "resid")
+
+  test3_aov = reli_aov(data = df,
+                       measure = "va",
+                       item = "it",
+                       id = "id",
+                       other_ci = TRUE,
+                       type = "chi",
+                       cv_calc = "SEM")
+
+
 
   pr_test = print(test3)
   p = plot(test3)
@@ -254,5 +330,64 @@ testthat::test_that("Simple Use Run Through", {
                          id = "id",
                          weighted = TRUE)
 
+  ### increase coverage calcs ----
+
+  test3 = reli_stats(data = df,
+                     measure = "va",
+                     item = "it",
+                     id = "id",
+                     cv_calc = "SEM",
+                     other_ci = TRUE,
+                     type = "perc",
+                     replicates = 59)
+  test3 = reli_stats(data = df,
+                     measure = "va",
+                     item = "it",
+                     id = "id",
+                     cv_calc = "residuals",
+                     other_ci = TRUE,
+                     type = "perc",
+                     replicates = 59)
+
+  test3 = reli_stats(data = df,
+                     measure = "va",
+                     item = "it",
+                     id = "id",
+                     se_type = "ICC2",
+                     other_ci = TRUE,
+                     type = "perc",
+                     replicates = 59)
+
+
+
+})
+
+test_that("Weir dataset A",{
+  df_a = data.frame(
+    x = c(146, 148, 170, 90, 157, 156, 176, 205),
+    y = c(140, 152, 152, 99, 145, 153, 167, 218)
+  )
+
+  test_a = reli_aov(data = df_a,
+                    col.names = c("x", "y"),
+                    wide = TRUE)
+
+  #testlmer = reli_stats(data = df_a,
+  #                    col.names = c("x", "y"),
+  #                    wide = TRUE)
+
+  expect_equal(round(test_a$SEM$estimate,1),
+               7.6) # page 236 paragraph 1
+
+  test_a = reli_aov(data = df_a,
+                    col.names = c("x", "y"),
+                    wide = TRUE,
+                    se_type = "ICC3")
+
+  expect_equal(round(test_a$SEP$estimate,1),
+               10.2) # page 236 2nd column
+
+  expect_equal(round(test_a$SEE$estimate,1),
+               7.1) # page 236 2nd column
 
 })

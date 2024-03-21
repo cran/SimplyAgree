@@ -1,5 +1,22 @@
 # NEWS
 
+# SimplyAgree 0.2.0
+
+- Add universal tolerance limits function: `tolerance_limit`
+- Add universal agreement limits function: `agreement_limit`
+
+# SimplyAgree 0.1.5
+
+- Add option to drop "CCC" calculation from `agree_reps` and `agree_nest` functions.
+
+# SimplyAgree 0.1.4
+
+- Major error in SEP/SEE calculations. SD total calculation adjusted. See `vignette("reliability_analysis",package ="SimplyAgree")` for details.
+
+# SimplyAgree 0.1.3
+
+- Added `chisq` type of confidence intervals for "Other" CIs for `reli_stats` and `reli_aov`
+
 # SimplyAgree 0.1.2
 - Fix to `agree_np` plot. (colors now align with order of LoA elements).
 - Added `reli_aov` function for sums of squares approach.

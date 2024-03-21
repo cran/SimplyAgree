@@ -11,7 +11,7 @@
 #' \describe{
 #'   \item{\code{print}}{Prints short summary of the Limits of Agreement}
 #'   \item{\code{plot}}{Returns a plot of the limits of agreement (type = 1) or concordance plot (type = 2)}
-#'   \item{\code{check}}{Returns 2 plots, p_norm and p_het, testing the assumptions of a Bland-Altman analysis. P-values for the normality and heteroskedascity tests are provided as captions to the plot.}
+#'   \item{\code{check}}{Returns 2 plots, p_norm and p_het, testing the assumptions of a Bland-Altman analysis. P-values for the normality and heteroskedasticity tests are provided as captions to the plot.}
 #' }
 #'
 #' @name simple_agree-methods
@@ -74,6 +74,7 @@ print.simple_agree <- function(x,...){
     cat("\n")
     if(get_call(x$call$prop_bias) == TRUE) {cat("LoA at average of both measures. Please check plot.")
       cat("\n")}
+    if(is.na(x$ccc.xy$est.ccc)){
     cat("###- Concordance Correlation Coefficient* (CCC) -###")
     cat("\n")
     cat("CCC: ",round(x$ccc.xy$est.ccc,4),", ",100*get_call(x$call$conf.level),
@@ -81,6 +82,7 @@ print.simple_agree <- function(x,...){
     cat("\n")
     cat("*Estimated via U-statistics")
     cat("\n")
+    }
   } else if(as.character(x$call[1]) == "agree_nest" | as.character(x$call[1]) == "SimplyAgree::agree_nest"){
     cat("Limit of Agreement = ", get_call(x$call$agree.level)*100, "%",  sep = "")
     #cat("\n")
@@ -99,6 +101,7 @@ print.simple_agree <- function(x,...){
     cat("\n")
     if(get_call(x$call$prop_bias) == TRUE) {cat("LoA at average of both measures. Please check plot.")
       cat("\n")}
+    if(is.na(x$ccc.xy$est.ccc)){
     cat("###- Concordance Correlation Coefficient (CCC) -###")
     cat("\n")
     cat("CCC: ",round(x$ccc.xy$est.ccc,4),", ",100*get_call(x$call$conf.level),
@@ -106,6 +109,7 @@ print.simple_agree <- function(x,...){
     cat("\n")
     cat("*Estimated via U-statistics; may be biased")
     cat("\n")
+    }
   } else if(as.character(x$call[1]) == "agree_np" | as.character(x$call[1]) == "SimplyAgree::agree_np"){
     cat("Limit of Agreement = ", get_call(x$call$agree.level)*100, "%",  sep = "")
     #cat("\n")
@@ -208,7 +212,7 @@ check.simple_agree <- function(x) {
   }
   df$mean = (df$x + df$y)/2
   df$delta = df$x - df$y
-  if(x$call$prop_bias == TRUE){
+  if(x$call$prop_bias){
     form_lm1 = as.formula(delta ~ mean)
     form_lmer1 = as.formula(delta ~ mean + (1|id))
   } else {
@@ -216,9 +220,8 @@ check.simple_agree <- function(x) {
     form_lmer1 = as.formula(delta ~ 1 + (1|id))
   }
 
-
   dat = df
-  ## Heteroskedasticity -------
+  ## heteroskedasticity -------
   mod_check = if (as.character(x$call[1]) != "agree_test" && as.character(x$call[1]) != "SimplyAgree::agree_test") {
     lme4::lmer(data = dat,
                form_lmer1)

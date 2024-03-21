@@ -120,6 +120,8 @@ ccc.xy <- function(x, y,
   }
   zv <- qnorm(N., mean = 0, sd = 1)
   zv2 = qnorm(N.2, mean = 0, sd = 1)
+  pct <- 1 - (1 - agree.level) / 2
+  agreelim = qnorm(pct)
   dat <- data.frame(x, y)
   id <- complete.cases(dat)
   nmissing <- sum(!complete.cases(dat))
@@ -168,11 +170,11 @@ ccc.xy <- function(x, y,
     dfs = df.residual(lm(formula = delta ~ rmean))
     }
   var.d = (delta.sd)^2/k
-  var.dlim = (1/k+zv2/(2*(k-1)))*(delta.sd)^2
+  # var.dlim = (1/k+zv2/(2*(k-1)))*(delta.sd)^2
+  var.dlim = (delta.sd*sqrt(1/k + agreelim^2 / (2*(k-1))) )^2
 
   ba.p <- mean(delta)
-  pct <- 1 - (1 - agree.level) / 2
-  agreelim = qnorm(pct)
+
   l.loa = ba.p - agreelim*delta.sd
   u.loa = ba.p + agreelim*delta.sd
 
@@ -188,7 +190,8 @@ ccc.xy <- function(x, y,
                        lower.uci = (l.loa + qt(N.2,dfs)*sqrt(var.dlim)),
                        upper.loa = u.loa,
                        upper.lci = (u.loa - qt(N.2,dfs)*sqrt(var.dlim)),
-                       upper.uci = (u.loa + qt(N.2,dfs)*sqrt(var.dlim)))
+                       upper.uci = (u.loa + qt(N.2,dfs)*sqrt(var.dlim))
+                       )
 
   rho.c <- data.frame(p, llt, ult)
   names(rho.c) <- c("est.ccc", "lower.ci", "upper.ci")
@@ -229,7 +232,7 @@ plot_het = function (x,
       se = TRUE,
       alpha = alpha_level,
       formula = y ~ x,
-      size = size_line,
+      linewidth = size_line,
       colour = colors[1]
     ) +
     labs(
@@ -256,7 +259,7 @@ plot_qq = function (x,
       size = size_point,
       colour = colors[2]
     ),
-    geom_qq_line(size = size_line,
+    geom_qq_line(linewidth = size_line,
                           colour = colors[1])
   )
   y_lab <- "Sample Quantiles"
@@ -287,7 +290,7 @@ plot_bias = function(x,
       se = TRUE,
       alpha = alpha_level,
       formula = y ~ x,
-      size = size_line,
+      linewidth = size_line,
       colour = colors[1]
     ) +
     labs(

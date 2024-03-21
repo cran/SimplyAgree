@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   eval = TRUE,
@@ -15,7 +15,7 @@ library(magrittr)
 data("temps")
 df_temps = temps
 
-## ---- fig.cap="Example of the Line of Identity"-------------------------------
+## ----fig.cap="Example of the Line of Identity"--------------------------------
 qplot(1,1) + geom_abline(intercept = 0, slope = 1)
 
 ## ----pltsrec,fig.cap="Concordance Plots of Rectal Temperature",echo=FALSE,fig.width=8.5,fig.height=5----
@@ -134,60 +134,70 @@ p_eso.post
 
 p_eso.delta
 
-## ---- echo=FALSE--------------------------------------------------------------
-rec.post_loa = readr::read_rds("rec_post_loa.rds")
-rec.delta_loa = readr::read_rds("rec_delta_loa.rds")
+## ----recpost------------------------------------------------------------------
+# note: more accurate tolerance limits are given by tol_method = "perc"
+rec.post_tol = tolerance_limit(
+  data = df_rec.post,
+  x = "PM",
+  y = "AM",
+  id = "id",
+  condition = "trial_condition"
+)
 
-eso.post_loa = readr::read_rds("eso_post_loa.rds")
-eso.delta_loa = readr::read_rds("eso_delta_loa.rds")
 
-
-## ---- eval=FALSE--------------------------------------------------------------
-#  rec.post_loa = SimplyAgree::loa_lme(diff = "diff",
-#                                      condition = "trial_condition",
-#                                      id = "id",
-#                                      avg = "Average",
-#                                      data = df_rec.post,
-#                                      conf.level = .95,
-#                                      agree.level = .95,
-#                                      replicates = 199,
-#                                      type = "perc")
 
 ## -----------------------------------------------------------------------------
-knitr::kable(rec.post_loa$loa,
-             caption = "LoA: Trec Post Exercise")
+print(rec.post_tol)
 
-## ---- fig.cap="Limits of Agreement for Trec Post Exercise",fig.width=7,fig.height=5----
-plot(rec.post_loa)
-
-## -----------------------------------------------------------------------------
-knitr::kable(rec.delta_loa$loa,
-             caption = "LoA: Delta Trec")
-
-## ---- fig.cap="Limits of Agreement for Delta Trec",fig.width=7,fig.height=5----
-plot(rec.delta_loa)
-
-## ---- eval=FALSE--------------------------------------------------------------
-#  eso.post_loa = SimplyAgree::loa_mixed(diff = "diff",
-#                                       condition = "trial_condition",
-#                                       id = "id",
-#                                       data = df_eso.post,
-#                                       conf.level = .95,
-#                                       agree.level = .95,
-#                                       replicates = 199,
-#                                       type = "bca")
+## ----fig.cap="Tolerance Limits for Trec Post Exercise",fig.width=7,fig.height=5----
+plot(rec.post_tol)
 
 ## -----------------------------------------------------------------------------
-knitr::kable(eso.post_loa$loa,
-             caption = "LoA: Teso Post Exercise")
 
-## ---- fig.cap="Limits of Agreement for Teso Post Exercise",fig.width=7,fig.height=5----
-plot(eso.post_loa)
+rec.delta_tol = tolerance_limit(
+  x = "PM",
+  y = "AM",
+  condition = "trial_condition",
+  id = "id",
+  data = df_rec.delta
+)
+  
+rec.delta_tol
+
+## ----fig.cap="Tolerance Limits for Delta Trec",fig.width=7,fig.height=5-------
+
+# Plot Maximal Allowable Difference with delta argument
+plot(rec.delta_tol,
+     delta = .25)
 
 ## -----------------------------------------------------------------------------
-knitr::kable(eso.delta_loa$loa,
-             caption = "LoA: Delta Teso")
 
-## ---- fig.cap="Limits of Agreement for Delta Teso",fig.width=7,fig.height=5----
-plot(eso.delta_loa)
+eso.post_tol = tolerance_limit(
+  x = "AM",
+  y = "PM",
+  condition = "trial_condition",
+  id = "id",
+  data = df_eso.post
+)
+
+eso.delta_tol = tolerance_limit(
+  x = "AM",
+  y = "PM",
+  condition = "trial_condition",
+  id = "id",
+  data = df_eso.delta
+)
+
+## -----------------------------------------------------------------------------
+eso.post_tol
+
+## ----fig.cap="Limits of Agreement for Teso Post Exercise",fig.width=7,fig.height=5----
+plot(eso.post_tol)
+
+## -----------------------------------------------------------------------------
+eso.delta_tol
+
+## ----fig.cap="Limits of Agreement for Delta Teso",fig.width=7,fig.height=5----
+plot(eso.delta_tol,
+     delta = .25)
 

@@ -6,87 +6,103 @@ knitr::opts_chunk$set(
 
 ## -----------------------------------------------------------------------------
 library(SimplyAgree)
+data(temps)
 
 ## -----------------------------------------------------------------------------
-a1 = agree_test(x = reps$x,
-                y = reps$y,
-                agree.level = .8)
+tolerance_limit(
+  data = temps,
+  x = "trec_pre", # First measure
+  y = "teso_pre", # Second measure
+  id = "id", # Subject ID
+  condition = "tod", # Identify condition that may affect differences
+  cor_type = "sym" # Set correlation structure as Compound Symmetry
+)
 
 ## -----------------------------------------------------------------------------
-print(a1)
+test1 = tolerance_limit(data = temps,
+                        x = "teso_pre",
+                        y = "trec_pre",
+                        id = "id",
+                        condition = "tod")
 
-## ---- fig.width=6, fig.height=6-----------------------------------------------
-plot(a1, type = 1)
-
-plot(a1, type = 2) 
+test1
 
 ## -----------------------------------------------------------------------------
-a2 = agree_reps(x = "x",
+# Calc. LoA
+a1 = agreement_limit(data = reps,
+                     x = "x",
+                     y = "y")
+# print
+a1
+
+## -----------------------------------------------------------------------------
+a2 = agreement_limit(x = "x",
                 y = "y",
                 id = "id",
                 data = reps,
-                agree.level = .8)
+                data_type = "reps",
+                agree.level = .8) 
+
+a2
 
 ## -----------------------------------------------------------------------------
-print(a2)
-
-## ---- fig.width=6, fig.height=6-----------------------------------------------
-plot(a2, type = 1)
-
-plot(a2, type = 2)
-
-## -----------------------------------------------------------------------------
-a3 = agree_nest(x = "x",
+a3 = agreement_limit(x = "x",
                 y = "y",
                 id = "id",
                 data = reps,
-                agree.level = .8)
+                data_type = "nest",
+                loa_calc = "mover",
+                agree.level = .95)
+a3
 
 ## -----------------------------------------------------------------------------
-print(a3)
-
-## ---- fig.width=6, fig.height=6-----------------------------------------------
-plot(a3, type = 1)
-
-plot(a3, type = 2)
-
-## -----------------------------------------------------------------------------
-a1 = agree_test(x = reps$x,
-                y = reps$y,
-                agree.level = .8)
-
-check(a1)
+res1 = tolerance_limit(
+  data = temps,
+  x = "trec_pre", # First measure
+  y = "teso_pre", # Second measure
+  id = "id", # Subject ID
+  condition = "tod", # Identify condition that may affect differences
+  cor_type = "sym" # Set correlation structure as Compound Symmetry
+)
+plot(res1, delta = .25) # Set maximal allowable difference to .25 units
 
 ## -----------------------------------------------------------------------------
-a1 = agree_test(x = reps$x,
-                y = reps$y,
-                prop_bias = TRUE,
-                agree.level = .8)
-print(a1)
+test_agree = agreement_limit(x = "x",
+                             y = "y",
+                             data = reps)
 
-plot(a1)
+check(test_agree)
 
-## -----------------------------------------------------------------------------
-a1 = agree_np(x = "x",
-              y = "y",
-              data = reps,
-              delta = 2,
-              prop_bias = FALSE,
-              agree.level = .8)
-print(a1)
+test_tol = tolerance_limit(x = "x",
+                           y = "y",
+                           data = reps)
 
-plot(a1)
+check(test_tol)
 
 ## -----------------------------------------------------------------------------
-a1 = agree_np(x = "x",
-              y = "y",
-              data = reps,
-              delta = 2,
-              prop_bias = TRUE,
-              agree.level = .8)
-print(a1)
 
-plot(a1)
+test_tol = tolerance_limit(x = "x",
+                           y = "y",
+                           data = reps,
+                           prop_bias = TRUE)
+print(test_tol)
+
+# See effect of proportional bias on limits
+plot(test_tol)
+
+# Confirm its effects in proportional bias check plot (should be horizontal now)
+check(test_tol)
+
+## -----------------------------------------------------------------------------
+tolerance_limit(
+  data = temps,
+  log_tf = TRUE, # natural log transformation of responses
+  x = "trec_pre", # First measure
+  y = "teso_pre", # Second measure
+  id = "id", # Subject ID
+  condition = "tod", # Identify condition that may affect differences
+  cor_type = "sym" # Set correlation structure as Compound Symmetry
+)
 
 ## -----------------------------------------------------------------------------
 set.seed(81346)
@@ -97,9 +113,10 @@ y = x + diff
 df = data.frame(x = x,
                 y = y)
 
-a1 = agree_test(x = df$x,
-                y = df$y,
-                agree.level = .95)
+a1 = agreement_limit(data = df,
+                     x = "x",
+                     y = "y",
+                     agree.level = .95)
 
 plot(a1,
      geom = "geom_point")
@@ -115,34 +132,4 @@ plot(a1,
 
 plot(a1,
      geom = "stat_density_2d")
-
-## ----warning=FALSE,eval=FALSE-------------------------------------------------
-#  
-#  recpre_long$avg = (recpre_long$PM + recpre_long$PM)/2
-#  a4 = loa_lme(data = recpre_long,
-#                 diff = "diff",
-#                 avg = "avg",
-#                 #condition = "trial_condition",
-#                 id = "id",
-#                 #plot.xaxis = "AM",
-#                 replicates = 199,
-#                 type = "perc")
-
-## -----------------------------------------------------------------------------
-power_res <- blandPowerCurve(
-  samplesizes = seq(10, 100, 1),
-  mu = 0.5,
-  SD = 2.5,
-  delta = c(6,7),
-  conf.level = c(.90,.95),
-  agree.level = c(.8,.9)
-)
-
-head(power_res)
-
-## -----------------------------------------------------------------------------
-find_n(power_res, power = .8)
-
-## ----fig.width=6, fig.height=6------------------------------------------------
-plot(power_res)
 

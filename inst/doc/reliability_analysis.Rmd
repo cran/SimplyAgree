@@ -363,19 +363,26 @@ $$
 
 ## Standard Error Calculations
 
-The standard error of the measurement (SEM), standard error of the estimate (SEE), and standard error of prediction (SEP) are all estimated with the following calculations.
+The standard error of the measurement (SEM), standard error of the estimate (SEE), and standard error of prediction (SEP) are all estimated with the following calculations.^[This section was previously incorrect. The variance calculation used to utilize $n_j$ instead of N.]
 
+The default SEM calculation is the following:
 
 $$
 SEM = \sqrt{MSE} 
 $$
+Alternatively, the SEM can be calculated as the following and the ICC is determined through the `se_type` argument:
 
 $$
-SEE = \sqrt{\frac{\sigma^2+\sigma^2_{\alpha j}+\sigma^2_{\alpha k}}{(n_j-1)}} \cdot \sqrt{ICC_{(3,1)} \cdot (1-ICC_{(3,1)})} 
+SEM = \sqrt{\frac{SS_{total}}{(N-1)}} \cdot \sqrt{1-ICC}
+$$
+The other measures default to using the following equations. The default is to use $ICC_{3,1}$, but can be modified with the `se_type` argument.
+
+$$
+SEE = \sqrt{\frac{SS_{total}}{(N-1)}} \cdot \sqrt{ICC \cdot (1-ICC)} 
 $$
 
 $$
-SEP = \sqrt{\frac{\sigma^2+\sigma^2_{\alpha j}+\sigma^2_{\alpha k}}{(n_j-1)}} \cdot \sqrt{1-ICC_{(3,1)}^2} 
+SEP = \sqrt{\frac{SS_{total}}{(N-1)}} \cdot \sqrt{1-ICC^2} 
 $$
 
 ## Coefficient of Variation 
@@ -385,10 +392,10 @@ The CV is calculated 3 potential ways within `reli_stats`. I highly recommend re
 1. From the MSE (default)
 
 $$
-CV = \frac{MSE }{ \bar y}
+CV = \frac{ \sqrt{MSE} }{ \bar y}
 $$
 
-2. From the SEM (most conservative)^[Also called "%SEM" in some texts]
+2. From the SEM^[Also called "%SEM" in some texts. Equivalent to MSE if the `se_type` is set to "MSE"]
 
 $$
 CV = \frac{SEM}{ \bar y}
@@ -402,13 +409,50 @@ $$
 
 ## Other Confidence Intervals
 
-If the `other_ci` argument is set to TRUE then parametric bootstrapped confidence intervals (using) will be calculated for the CV, SEM, SEP, and SEE. The number of resamples can be set with the replicates argument (default is 1999; increase for greater accuracy or lower for greater speed). The reported confidence intervals are estimated using the percentile method `type = 'perc'`, the normal `type = 'norm'`, or basic methods `type = 'basic'`. 
+If the `other_ci` argument is set to TRUE then  confidence intervals  will be calculated for the CV, SEM, SEP, and SEE. 
+
+
+### Chi-square
+
+The default method is `type = 'chisq`. This method utilizes the chi-square distribution to *approximate* confidence intervals for these measurements. The accuracy of these estimates is likely variable, and is probably poor for small samples.
+
+For the CV, the calculation is as follows:
+
+$$
+Lower \space CI = \frac{CV}{\sqrt{(\frac{\chi^2_{1-\alpha/2}}{df_{error}+1}-1) \cdot CV^2 \cdot \frac{\chi^2_{1-\alpha/2}}{df_{error}}}}
+$$
+
+
+
+$$
+Upper \space CI = \frac{CV}{\sqrt{(\frac{\chi^2_{\alpha/2}}{df_{error}+1}-1) \cdot CV^2 \cdot \frac{\chi^2_{\alpha/2}}{df_{error}}}}
+$$
+For the variance based measures (s) the calculation is as follows:
+
+$$
+Lower \space CI = s \cdot \sqrt{\frac{df_{error}}{\chi^2_{1-\alpha/2}}}
+$$
+
+
+
+$$
+Upper \space CI = s \cdot \sqrt{\frac{df_{error}}{\chi^2_{\alpha/2}}}
+$$
+
+### Bootstrap
+
+If type is not set to `chisq` then bootstrapping is performed.
+
+1. `reli_aov` utilizes a non-parametric ordinary bootstrap.
+2. `reli_stats` utilizes a parametric bootstrap.
+
+The number of resamples can be set with the replicates argument (default is 1999; increase for greater accuracy or lower for greater speed). The reported confidence intervals are estimated using the percentile method `type = 'perc'`, the normal `type = 'norm'`, or basic methods `type = 'basic'`. 
 
 To ensure reproducibility, please use `set.seed()` when these confidence intervals are calculated.
 
 # Inter-Rater Reliability
 
-In some cases, the reliability of a categorical or ordinal scale may be worth investigating. For example, physicians may want to develop a diagnosis tool and ensure that the diagnosis is reliable (i.e., categorical designation) or severity of the disease (i.e., a Likert-type scale). Coefficients can be calculated to assess the degree of inter-rater reliability. In its simplest form, the percent agreement between all the raters can be calculated. All other coefficients of agreement are esssentially trying to "correct" for random guessing of the rater. The function to make these calculations in the `SimplyAgree` is `agree_coef`, and it produces 4 estimates: percent agreement, Gwet's AC, Fleiss' Kappa, and Krippendorff's Alpha. However, other packages provide much a much greater breadth of calculative approaches [@irrCAC]. 
+In some cases, the reliability of a categorical or ordinal scale may be worth investigating. For example, physicians may want to develop a diagnosis tool and ensure that the diagnosis is reliable (i.e., categorical designation) or severity of the disease (i.e., a Likert-type scale). Coefficients can be calculated to assess the degree of inter-rater reliability. In its simplest form, the percent agreement between all the raters can be calculated. All other coefficients of agreement are essentially trying to "correct" for random guessing of the rater. The function to make these calculations in the `SimplyAgree` is `agree_coef`, and it produces 4 estimates: percent agreement, Gwet's AC, Fleiss' Kappa, and Krippendorff's Alpha. However, other packages provide much a much greater breadth of calculative approaches [@irrCAC]. 
 
 In the `agree_coef` function, the user can specify `weighted = TRUE`. If this argument is set to true than the ratings have quadratic weights applied to them. Essentially, this penalizes values farther away from each other more than those close to each other. For example, a pair of values equal to 3 and 4 would be penalized less than a pair of values to 1 and 4. For more details, on these "agreement coefficients" I refer all users to Gwet's textbook on inter-rater agreement [@gwet].
 

@@ -17,13 +17,13 @@ dem_reg(
 )
 }
 \arguments{
-\item{x}{Name of column with first measurement}
+\item{x}{Name of column with first measurement.}
 
 \item{y}{Name of other column with the other measurement to compare to the first.}
 
-\item{id}{Column with subject identifier}
+\item{id}{Column with subject identifier.}
 
-\item{data}{Data frame with all data}
+\item{data}{Data frame with all data.}
 
 \item{conf.level}{The confidence level required. Default is 95\%.}
 
@@ -33,34 +33,37 @@ dem_reg(
 
 \item{error.ratio}{Ratio of the two error variances. Default is 1. This argument is ignored if subject identifiers are provided.}
 
-\item{keep_data}{Logical indicator (TRUE/FALSE). If TRUE the jacknife samples are returned; default is FALSE.}
+\item{keep_data}{Logical indicator (TRUE/FALSE). If TRUE, the jacknife samples are returned; default is FALSE. Users may wish to set to FALSE if data is especially large.}
 }
 \value{
 The function returns a simple_eiv (eiv meaning "error in variables") object.
-
-\describe{
-  \item{\code{"call"}}{The matched call.}
-  \item{\code{"model"}}{Data frame presenting the results from the Deming regression analysis.}
-  \item{\code{"resamples"}}{List containing resamples from jacknife procedure.}
+\itemize{
+\item \code{call}: The matched call.
+\item \code{model}: Data frame presenting the results from the Deming regression analysis.
+\item \code{resamples}: List containing resamples from jacknife procedure.
 }
 }
 \description{
-A function for fitting a straight line to two-dimensional data (i.e., X and Y) are measured with error.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
+A function for fitting a straight line to two-dimensional data (i.e., X and Y) that are measured with error.
 }
 \details{
 This function provides a Deming regression analysis wherein the sum of distances in both x and y direction is minimized.
-Deming is useful in situations where both X & Y are measured with error.
+Deming regression, also known as error-in-variable regression, is useful in situations where both X & Y are measured with error.
 The use of Deming regression is beneficial when comparing to methods for measuring the same continuous variable.
 
-Currently, the dem_reg function covers simple Deming regression and weighted Deming regression. Weighted Deming regression can be used by setting weighted to TRUE. The weights can be provided by the user or can be calculated within function.
+Currently, the dem_reg function covers simple Deming regression and weighted Deming regression.
+Weighted Deming regression can be used by setting the weighted argument to TRUE.
+The weights can be provided by the user or can be calculated within function.
 
-If the data are measured in replicates, then the measurement error can be directly derived from the data. This can be accomplished by indicating the subject identifier with the id argument.
-When the replicates are not available in the data, then the ratio of error variances (y/x) can be provided with the error.ratio argument.
+If the data are measured in replicates, then the measurement error can be directly derived from the data.
+This can be accomplished by indicating the subject identifier with the id argument.
+When the replicates are not available in the data,
+then the ratio of error variances (y/x) can be provided with the error.ratio argument.
 }
-\section{References}{
-
+\references{
 Linnet, K. (1990) Estimation of the linear relationship between the measurements of two methods with proportional errors. Statistics in Medicine, 9, 1463-1473.
 
 Linnet, K. (1993). Evaluation of regression procedures for methods comparison studies. Clinical chemistry, 39, 424-432.
 }
-
