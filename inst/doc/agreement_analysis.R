@@ -105,6 +105,18 @@ tolerance_limit(
 )
 
 ## -----------------------------------------------------------------------------
+tolerance_limit(
+  data = temps,
+  log_tf = TRUE, # natural log transformation of responses
+  log_tf_display = "sympercent", # display results as sympercent
+  x = "trec_pre", # First measure
+  y = "teso_pre", # Second measure
+  id = "id", # Subject ID
+  condition = "tod", # Identify condition that may affect differences
+  cor_type = "sym" # Set correlation structure as Compound Symmetry
+)
+
+## -----------------------------------------------------------------------------
 set.seed(81346)
 x = rnorm(750, 100, 10)
 diff = rnorm(750, 0, 1)

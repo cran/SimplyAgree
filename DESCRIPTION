@@ -1,7 +1,7 @@
 Package: SimplyAgree
 Type: Package
 Title: Flexible and Robust Agreement and Reliability Analyses
-Version: 0.2.0
+Version: 0.2.1
 Authors@R: person("Aaron", "Caldwell", email = "arcaldwell49@gmail.com",
                   role = c("aut", "cre"))
 Maintainer: Aaron Caldwell <arcaldwell49@gmail.com>
@@ -20,7 +20,7 @@ Suggests: knitr, rmarkdown, testthat, readr, covr, mgcv, ggeffects,
 VignetteBuilder: knitr
 Depends: R (>= 3.6)
 NeedsCompilation: no
-Packaged: 2024-03-21 14:03:17 UTC; aaroncaldwell
+Packaged: 2025-02-24 16:17:26 UTC; CaldwellAaron
 Author: Aaron Caldwell [aut, cre]
 Repository: CRAN
-Date/Publication: 2024-03-21 14:20:06 UTC
+Date/Publication: 2025-02-24 16:40:11 UTC

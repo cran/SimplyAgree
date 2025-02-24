@@ -13,8 +13,11 @@
 #' @param prop_bias Logical indicator (TRUE/FALSE) of whether proportional bias should be considered for the limits of agreement calculations.
 #' @param alpha The alpha-level for confidence levels.
 #' @param log_tf Calculate limits of agreement using log-transformed data.
+#' @param log_tf_display The type of presentation for log-transformed results. The differences between methods can be displayed as a "ratio" or "sympercent".
 #' @param data_type The type of data structure. Options include "simple" (all independent data points), "nest" (nested data) and "reps" (replicated data points).
 #' @param loa_calc The method by which the limits of agreement confidence intervals are calculated. Options are "mover" (Methods of Recovering Variances method) or "blandlatman" (Bland-Altman method).
+#' @param lmer_df Degrees of freedom method, only matters for if data_type is "nest". Default is "satterthwaite". The "asymptotic" method is faster but more liberal.
+#' @param lmer_limit Sample size limit for degrees of freedom method. If number of observations exceeds this limit, then the "asymptotic" method is utilized.
 #' @return Returns single loa class object with the results of the agreement analysis.
 #'
 #'   - `loa`: A data frame containing the Limits of Agreement.
@@ -67,10 +70,16 @@ agreement_limit = function(x,
                            agree.level = 0.95,
                            alpha = 0.05,
                            prop_bias = FALSE,
-                           log_tf = FALSE){
+                           log_tf = FALSE,
+                           log_tf_display = c("ratio","sympercent"),
+                           lmer_df = c("satterthwaite",
+                                       "asymptotic"),
+                           lmer_limit = 3000){
+  lmer_df = match.arg(lmer_df)
   data_type = match.arg(data_type)
   loa_calc = match.arg(loa_calc)
   conf.level = 1- alpha
+  log_tf_display = match.arg(log_tf_display)
 
   call2 = match.call()
   call2$data_type = data_type
@@ -81,6 +90,7 @@ agreement_limit = function(x,
   call2$id = id
   call2$prop_bias  = prop_bias
   call2$log_tf = log_tf
+  call2$log_tf_display = log_tf_display
 
   df = loa_data_org(
     data = data,
@@ -123,7 +133,9 @@ agreement_limit = function(x,
       conf.level = conf.level,
       agree.level = agree.level,
       loa_calc = loa_calc,
-      prop_bias = prop_bias
+      prop_bias = prop_bias,
+      lmer_df = lmer_df,
+      lmer_limit = lmer_limit
     )
   }
 
@@ -423,7 +435,9 @@ calc_loa_nest = function(df,
                           conf.level = .95,
                           agree.level = .95,
                           loa_calc,
-                          prop_bias = FALSE){
+                          prop_bias = FALSE,
+                         lmer_df,
+                         lmer_limit){
   agreeq = qnorm(1 - (1 - agree.level) / 2)
   agree_l = 1 - (1 - agree.level) / 2
   agree_u = (1 - agree.level) / 2
@@ -475,25 +489,58 @@ calc_loa_nest = function(df,
     ((between_variance)^2/(n_sub-1) + (1 - 1/mh)^2 * (within_variance)^2/(n_obs-n_sub))
 
   if (prop_bias == FALSE) {
-    bias_values = emmeans(model, ~1, lmer.df = "satterthwaite") %>%
+    if(n_obs <= lmer_limit & lmer_df == "satterthwaite"){
+    bias_values = emmeans(model, ~1, lmer.df = "satterthwaite",
+                          lmerTest.limit = lmer_limit) %>%
       as.data.frame() %>%
       rename(bias = emmean) %>%
       mutate(avg = "overall") %>%
       select(avg, bias, SE, df, lower.CL, upper.CL)
+    }
+
+    if(n_obs >= lmer_limit | lmer_df == "asymptotic"){
+      bias_values = emmeans(model, ~1, lmer.df = "asymptotic") %>%
+        as.data.frame() %>%
+        rename(bias = emmean) %>%
+        mutate(avg = "overall") %>%
+        select(avg, bias, SE, df, asymp.LCL, asymp.UCL) %>%
+        rename(lower.CL=asymp.LCL, upper.CL=asymp.UCL)
+
+    }
 
   } else {
-    bias_values = ref_grid(model,
-                           at = list(
-                             avg = c(
-                               min(df$avg, na.rm = TRUE),
-                               mean(df$avg, na.rm = TRUE),
-                               max(df$avg, na.rm = TRUE)
-                             )
-                           )) %>%
-      emmeans(~avg, lmer.df = "satterthwaite") %>%
-      as.data.frame() %>%
-      rename(bias = emmean) %>%
-      select(avg, bias, SE, df, lower.CL, upper.CL)
+    if(n_obs <= lmer_limit & lmer_df == "satterthwaite"){
+      bias_values = ref_grid(model,
+                             at = list(
+                               avg = c(
+                                 min(df$avg, na.rm = TRUE),
+                                 mean(df$avg, na.rm = TRUE),
+                                 max(df$avg, na.rm = TRUE)
+                               )
+                             )) %>%
+        emmeans(~avg, lmer.df = "satterthwaite",
+                lmerTest.limit = lmer_limit) %>%
+        as.data.frame() %>%
+        rename(bias = emmean) %>%
+        select(avg, bias, SE, df, lower.CL, upper.CL)
+    }
+
+    if(n_obs >= lmer_limit | lmer_df == "asymptotic"){
+      bias_values = ref_grid(model,
+                             at = list(
+                               avg = c(
+                                 min(df$avg, na.rm = TRUE),
+                                 mean(df$avg, na.rm = TRUE),
+                                 max(df$avg, na.rm = TRUE)
+                               )
+                             )) %>%
+        emmeans(~avg, lmer.df = "asymptotic") %>%
+        as.data.frame() %>%
+        rename(bias = emmean) %>%
+        select(avg, bias, SE, df, asymp.LCL, asymp.UCL) %>%
+        rename(lower.CL=asymp.LCL, upper.CL=asymp.UCL)
+    }
+
 
   }
 
