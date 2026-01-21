@@ -88,6 +88,7 @@ print(a1)
 
 plot(a1)
 
+
 ## -----------------------------------------------------------------------------
 set.seed(81346)
 x = rnorm(750, 100, 10)
@@ -99,12 +100,13 @@ df = data.frame(x = x,
 
 a1 = agree_test(x = df$x,
                 y = df$y,
+                #prop_bias =TRUE,
                 agree.level = .95)
 
-plot(a1,
+plot(a1, 
      geom = "geom_point")
 
-plot(a1,
+plot(a1, 
      geom = "geom_bin2d")
 
 plot(a1,
@@ -117,32 +119,14 @@ plot(a1,
      geom = "stat_density_2d")
 
 ## ----warning=FALSE,eval=FALSE-------------------------------------------------
-#  
-#  recpre_long$avg = (recpre_long$PM + recpre_long$PM)/2
-#  a4 = loa_lme(data = recpre_long,
-#                 diff = "diff",
-#                 avg = "avg",
-#                 #condition = "trial_condition",
-#                 id = "id",
-#                 #plot.xaxis = "AM",
-#                 replicates = 199,
-#                 type = "perc")
-
-## -----------------------------------------------------------------------------
-power_res <- blandPowerCurve(
-  samplesizes = seq(10, 100, 1),
-  mu = 0.5,
-  SD = 2.5,
-  delta = c(6,7),
-  conf.level = c(.90,.95),
-  agree.level = c(.8,.9)
-)
-
-head(power_res)
-
-## -----------------------------------------------------------------------------
-find_n(power_res, power = .8)
-
-## ----fig.width=6, fig.height=6------------------------------------------------
-plot(power_res)
+# 
+# recpre_long$avg = (recpre_long$PM + recpre_long$PM)/2
+# a4 = loa_lme(data = recpre_long,
+#                diff = "diff",
+#                avg = "avg",
+#                #condition = "trial_condition",
+#                id = "id",
+#                #plot.xaxis = "AM",
+#                replicates = 199,
+#                type = "perc")
 

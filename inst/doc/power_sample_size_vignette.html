@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Aaron R. Caldwell" />
+
+
+<title>Power Analysis and Sample Size Determination for Agreement Studies</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">
+
+div.csl-bib-body { }
+div.csl-entry {
+clear: both;
+margin-bottom: 0em;
+}
+.hanging div.csl-entry {
+margin-left:2em;
+text-indent:-2em;
+}
+div.csl-left-margin {
+min-width:2em;
+float:left;
+}
+div.csl-right-inline {
+margin-left:2em;
+padding-left:1em;
+}
+div.csl-indent {
+margin-left: 2em;
+}
+</style>
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Power Analysis and Sample Size
+Determination for Agreement Studies</h1>
+<h4 class="author">Aaron R. Caldwell</h4>
+<h4 class="date">Last Updated: 2026-01-21</h4>
+
+
+<div id="TOC">
+<ul>
+<li><a href="#introduction" id="toc-introduction">Introduction</a></li>
+<li><a href="#understanding-the-approaches" id="toc-understanding-the-approaches">Understanding the
+Approaches</a></li>
+<li><a href="#method-1-exact-agreement-test" id="toc-method-1-exact-agreement-test">Method 1: Exact Agreement
+Test</a></li>
+<li><a href="#method-2-bland-altman-power-curves" id="toc-method-2-bland-altman-power-curves">Method 2: Bland-Altman Power
+Curves</a></li>
+<li><a href="#method-3-expected-half-width" id="toc-method-3-expected-half-width">Method 3: Expected
+Half-Width</a></li>
+<li><a href="#method-4-assurance-probability" id="toc-method-4-assurance-probability">Method 4: Assurance
+Probability</a></li>
+<li><a href="#decision-guide-for-the-method" id="toc-decision-guide-for-the-method">Decision Guide for the
+Method</a></li>
+<li><a href="#handling-clusterednested-data" id="toc-handling-clusterednested-data">Handling Clustered/Nested
+Data</a></li>
+<li><a href="#practical-recommendations" id="toc-practical-recommendations">Practical Recommendations</a></li>
+<li><a href="#references" id="toc-references">References</a></li>
+</ul>
+</div>
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>This vignette provides comprehensive guidance on power analysis and
+sample size determination for method comparison and agreement studies
+using the <code>SimplyAgree</code> package.</p>
+<div id="available-methods" class="section level2">
+<h2>Available Methods</h2>
+<p><code>SimplyAgree</code> implements four approaches to power/sample
+size calculations:</p>
+<ol style="list-style-type: decimal">
+<li><strong><code>power_agreement_exact()</code></strong> - Exact
+agreement test <span class="citation">(<a href="#ref-shieh2019">Shieh
+2019</a>)</span></li>
+<li><strong><code>blandPowerCurve()</code></strong> - Bland-Altman power
+curves <span class="citation">(<a href="#ref-lu2016">Lu et al.
+2016</a>)</span></li>
+<li><strong><code>agree_expected_half()</code></strong> - Expected
+half-width criterion <span class="citation">(<a href="#ref-JanShieh2018">Jan and Shieh 2018</a>)</span></li>
+<li><strong><code>agree_assurance()</code></strong> - Assurance
+probability criterion <span class="citation">(<a href="#ref-JanShieh2018">Jan and Shieh 2018</a>)</span></li>
+</ol>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(SimplyAgree)</span></code></pre></div>
+</div>
+</div>
+<div id="understanding-the-approaches" class="section level1">
+<h1>Understanding the Approaches</h1>
+<div id="hypothesis-testing-vs.-estimation" class="section level2">
+<h2>Hypothesis Testing vs. Estimation</h2>
+<p>The methods divide into two categories:</p>
+<p><strong>Hypothesis Testing</strong> (binary decision):</p>
+<ul>
+<li><code>power_agreement_exact()</code> - Tests if central proportion,
+essentially tolerance intevals, are within the maximal allowable
+difference</li>
+<li><code>blandPowerCurve()</code> - Tests if confidence intervals of
+limits of agreement fall within the maximal allowable difference</li>
+</ul>
+<p><strong>Estimation</strong> (quantifying precision):</p>
+<ul>
+<li><code>agree_expected_half()</code> - Controls average CI half-width
+of limits of agreement</li>
+<li><code>agree_assurance()</code> - Controls probability of achieving
+target CI half-width of limits of agreement</li>
+</ul>
+</div>
+</div>
+<div id="method-1-exact-agreement-test" class="section level1">
+<h1>Method 1: Exact Agreement Test</h1>
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p>Tests whether the central P* proportion of paired differences falls
+within the maximal allowable difference [-delta, delta].</p>
+<p><strong>Hypotheses:</strong></p>
+<ul>
+<li>H0: Methods disagree (central portion extends beyond bounds)</li>
+<li>H1: Methods agree (central portion within bounds)</li>
+</ul>
+</div>
+<div id="usage" class="section level2">
+<h2>Usage</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">power_agreement_exact</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="at">n =</span> <span class="cn">NULL</span>,           <span class="co"># Sample size</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">delta =</span> <span class="cn">NULL</span>,       <span class="co"># Tolerance bound</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">mu =</span> <span class="dv">0</span>,            <span class="co"># Mean of differences</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">sigma =</span> <span class="cn">NULL</span>,       <span class="co"># SD of differences</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">p0_star =</span> <span class="fl">0.95</span>,    <span class="co"># Central proportion (tolerance coverage)</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="at">power =</span> <span class="cn">NULL</span>,       <span class="co"># Target power</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="at">alpha =</span> <span class="fl">0.05</span>       <span class="co"># Significance level</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>)</span></code></pre></div>
+<p>Specify <strong>exactly three</strong> of: n, delta, power,
+sigma.</p>
+</div>
+<div id="example-sample-size-calculation" class="section level2">
+<h2>Example: Sample Size Calculation</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Blood pressure device comparison</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">power_agreement_exact</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">delta =</span> <span class="dv">7</span>,          <span class="co"># +/-7 mmHg tolerance</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">mu =</span> <span class="fl">0.5</span>,          <span class="co"># Expected bias</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">sigma =</span> <span class="fl">2.5</span>,       <span class="co"># Expected SD</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="at">p0_star =</span> <span class="fl">0.95</span>,    <span class="co"># 95% must be within bounds</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">power =</span> <span class="fl">0.80</span>,      <span class="co"># 80% power</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">alpha =</span> <span class="fl">0.05</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>)</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; Maximum iterations reached in gamma computation</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="fu">print</span>(result)</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt;      Power for Exact Method for Assessing Agreement Between Two Methods </span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt;               n = 34</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt;           delta = 7</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt;              mu = 0.5</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt;           sigma = 2.5</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt;         p0_star = 0.95</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt;         p1_star = 0.9939889</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt;           alpha = 0.05</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt;           power = 0.8018321</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt;  critical_value = 13.57044</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt; </span><span class="al">NOTE</span><span class="co">: H0: Central 95% of differences not within [-delta, delta]</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt;      H1: Central 99.4% of differences within [-delta, delta] </span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt; n is number pairs. Two measurements per unit; one for each method.</span></span></code></pre></div>
+</div>
+</div>
+<div id="method-2-bland-altman-power-curves" class="section level1">
+<h1>Method 2: Bland-Altman Power Curves</h1>
+<div id="overview-1" class="section level2">
+<h2>Overview</h2>
+<p>Calculates power curves using approximate Bland-Altman confidence
+intervals using the method of <span class="citation">Lu et al. (<a href="#ref-lu2016">2016</a>)</span> (which is approximate). Useful for
+exploring power across sample sizes.</p>
+</div>
+<div id="usage-1" class="section level2">
+<h2>Usage</h2>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">blandPowerCurve</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="at">samplesizes =</span> <span class="fu">seq</span>(<span class="dv">10</span>, <span class="dv">100</span>, <span class="dv">1</span>),  <span class="co"># Range of sample sizes</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">mu =</span> <span class="dv">0</span>,                          <span class="co"># Mean difference</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  SD,                              <span class="co"># SD of differences</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  delta,                           <span class="co"># Tolerance bound(s)</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">conf.level =</span> <span class="fl">0.95</span>,              <span class="co"># CI confidence level</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">agree.level =</span> <span class="fl">0.95</span>               <span class="co"># LOA agreement level</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="example-power-curve" class="section level2">
+<h2>Example: Power Curve</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Generate power curve</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>pc <span class="ot">&lt;-</span> <span class="fu">blandPowerCurve</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">samplesizes =</span> <span class="fu">seq</span>(<span class="dv">10</span>, <span class="dv">200</span>, <span class="dv">1</span>),</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">mu =</span> <span class="dv">0</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">SD =</span> <span class="fl">3.3</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">delta =</span> <span class="dv">8</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">conf.level =</span> <span class="fl">0.95</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  <span class="at">agree.level =</span> <span class="fl">0.95</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>)</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co"># Plot</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="fu">plot</span>(pc, <span class="at">type =</span> <span class="dv">1</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co"># Find n for 80% power</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">find_n</span>(pc, <span class="at">power =</span> <span class="fl">0.8</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 5</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt;   delta conf.level agree.level power     N</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt;   &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; 1     8       0.95        0.95 0.800   145</span></span></code></pre></div>
+</div>
+</div>
+<div id="method-3-expected-half-width" class="section level1">
+<h1>Method 3: Expected Half-Width</h1>
+<div id="overview-2" class="section level2">
+<h2>Overview</h2>
+<p>Determines sample size to ensure <strong>average</strong> CI
+half-width &lt;= delta across hypothetical repeated studies.</p>
+</div>
+<div id="usage-2" class="section level2">
+<h2>Usage</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">agree_expected_half</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="at">conf.level =</span> <span class="fl">0.95</span>,    <span class="co"># CI confidence level</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">delta =</span> <span class="cn">NULL</span>,         <span class="co"># Target expected half-width</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">pstar =</span> <span class="fl">0.95</span>,        <span class="co"># Central proportion</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">sigma =</span> <span class="dv">1</span>,           <span class="co"># SD of differences</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">n =</span> <span class="cn">NULL</span>             <span class="co"># Sample size</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>)</span></code></pre></div>
+<p>Specify <strong>either</strong> n OR delta.</p>
+</div>
+<div id="example-sample-size-for-precision" class="section level2">
+<h2>Example: Sample Size for Precision</h2>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Want E[H] &lt;= 2.5*sigma</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">agree_expected_half</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">conf.level =</span> <span class="fl">0.95</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">delta =</span> <span class="fl">2.5</span>,         <span class="co"># As multiple of sigma</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">pstar =</span> <span class="fl">0.95</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="at">sigma =</span> <span class="dv">1</span>            <span class="co"># Standardized</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>)</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="fu">print</span>(result)</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt;      Expected half-width and sample size for limits of agreement </span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt;               n = 52</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt;      conf.level = 0.95</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt;    target.delta = 2.5</span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt;    actual.delta = 2.49677</span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt;           pstar = 0.95</span></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt;           sigma = 1</span></span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt;               g = 2.509039</span></span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt;               c = 1.004914</span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt;              zp = 1.959964</span></span></code></pre></div>
+</div>
+</div>
+<div id="method-4-assurance-probability" class="section level1">
+<h1>Method 4: Assurance Probability</h1>
+<div id="overview-3" class="section level2">
+<h2>Overview</h2>
+<p>Determines sample size to ensure <strong>probability</strong> that CI
+half-width &lt;= omega is at least (1-gamma).</p>
+<p>Stronger guarantee than expected half-width — ensures specific
+probability of achieving target precision.</p>
+</div>
+<div id="usage-3" class="section level2">
+<h2>Usage</h2>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">agree_assurance</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="at">conf.level =</span> <span class="fl">0.95</span>,     <span class="co"># CI confidence level</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">assurance =</span> <span class="fl">0.90</span>,      <span class="co"># Target assurance probability</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">omega =</span> <span class="cn">NULL</span>,          <span class="co"># Target half-width bound</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">pstar =</span> <span class="fl">0.95</span>,         <span class="co"># Central proportion</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">sigma =</span> <span class="dv">1</span>,            <span class="co"># SD of differences</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="at">n =</span> <span class="cn">NULL</span>              <span class="co"># Sample size</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>)</span></code></pre></div>
+<p>Specify <strong>either</strong> n OR omega.</p>
+</div>
+<div id="example-sample-size-with-guarantee" class="section level2">
+<h2>Example: Sample Size with Guarantee</h2>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Want 90% probability that H &lt;= 2.5*sigma</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">agree_assurance</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">conf.level =</span> <span class="fl">0.95</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">assurance =</span> <span class="fl">0.90</span>,    <span class="co"># 90% probability</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">omega =</span> <span class="fl">2.5</span>,         <span class="co"># Target bound</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="at">pstar =</span> <span class="fl">0.95</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="at">sigma =</span> <span class="dv">1</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>)</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="fu">print</span>(result)</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt;      Assurance probability &amp; sample size for Limits of Agreement </span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt;                n = 115</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt;       conf.level = 0.95</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt;        assurance = 0.9</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; actual.assurance = 0.9024848</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt;            omega = 2.5</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt;            pstar = 0.95</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt;            sigma = 1</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt;                g = 2.306167</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt;               zp = 1.959964</span></span></code></pre></div>
+</div>
+</div>
+<div id="decision-guide-for-the-method" class="section level1">
+<h1>Decision Guide for the Method</h1>
+<pre><code>Research Goal?
+|
+|- Hypothesis Testing -&gt; 
+|   \- Need exact Type I error control -&gt; Power for Agreement
+|
+\- Precision Estimation -&gt;
+    |- Average precision sufficient -&gt; Expected Half-Width
+    \- Need probabilistic guarantee -&gt; Assurance Probability</code></pre>
+</div>
+<div id="handling-clusterednested-data" class="section level1">
+<h1>Handling Clustered/Nested Data</h1>
+<div id="the-problem" class="section level2">
+<h2>The Problem</h2>
+<p>Many studies have <strong>clustered</strong> data where there are
+multiple measurements per subject or natural groupings (e.g., repeated
+measures, multi-center studies). Note, the advice here only applies to
+clustering but not to situations where replicate measures are taken
+within a measurement occasion (e.g., multiple measures at the same time
+point wherein any variation would only represent measurement error).</p>
+<p>Standard formulas assume independence<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>. Ignoring clustering
+can leads to studies that lack precision. To my knowledge, there is no
+well developed methods for accounting for clustering in sample size
+calculations for agreement studies, so we use a common approximation
+from survey sampling and multilevel modeling: the <strong>design
+effect</strong>.</p>
+</div>
+<div id="my-best-approximation-design-effect" class="section level2">
+<h2>My Best Approximation: Design Effect</h2>
+<p>The design effect (DEFF) quantifies loss of efficiency due to
+clustering:</p>
+<p><span class="math display">\[\text{DEFF} = 1 + (m - 1) \times
+\text{ICC}\]</span></p>
+<p>where:</p>
+<ul>
+<li>m = observations per cluster</li>
+<li>ICC = intraclass correlation coefficient</li>
+<li><span class="math inline">\(n_{ESS}\)</span> = effective sample
+size</li>
+</ul>
+<p><strong>Effect on sample size:</strong> <span class="math display">\[n_{\text{ESS}} = n_{\text{independent}} \times
+\text{DEFF}\]</span></p>
+</div>
+<div id="understanding-icc" class="section level2">
+<h2>Understanding ICC</h2>
+<p>ICC = proportion of variance between clusters:</p>
+<p><span class="math display">\[\text{ICC} =
+\frac{\sigma^2_{\text{between}}}{\sigma^2_{\text{between}} +
+\sigma^2_{\text{within}}}\]</span></p>
+</div>
+<div id="application-workflow" class="section level2">
+<h2>Application Workflow</h2>
+<ol style="list-style-type: decimal">
+<li>Calculate independent sample size (using power function)</li>
+<li>Determine m (observations per cluster)</li>
+<li>Estimate ICC (from pilot data, literature, or theory)</li>
+<li>Calculate DEFF = 1 + (m-1)*ICC</li>
+<li>Inflate: n_total = n_indep * DEFF</li>
+<li>Calculate clusters: K = the smallest integer greater than or equal
+to (n_total / m) (i.e., round up n_total / m)</li>
+</ol>
+</div>
+<div id="example-repeated-measures-design" class="section level2">
+<h2>Example: Repeated Measures Design</h2>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Step 1: Independent sample size</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">power_agreement_exact</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">delta =</span> <span class="dv">7</span>, <span class="at">mu =</span> <span class="fl">0.5</span>, <span class="at">sigma =</span> <span class="fl">2.5</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">p0_star =</span> <span class="fl">0.95</span>, <span class="at">power =</span> <span class="fl">0.80</span>, <span class="at">alpha =</span> <span class="fl">0.05</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>)</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; Maximum iterations reached in gamma computation</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>n_indep <span class="ot">&lt;-</span> result<span class="sc">$</span>n</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Independent pairs needed:&quot;</span>, n_indep, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt; Independent pairs needed: 34</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co"># Step 2: Apply design effect</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="dv">3</span>  <span class="co"># 3 measurements per participant</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>ICC <span class="ot">&lt;-</span> <span class="fl">0.15</span>  <span class="co"># from pilot or literature</span></span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>DEFF <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">+</span> (m <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> ICC</span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Design effect:&quot;</span>, <span class="fu">round</span>(DEFF, <span class="dv">3</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt; Design effect: 1.3</span></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a></span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="co"># Step 3: Calculate participants needed</span></span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a>n_ess <span class="ot">&lt;-</span> <span class="fu">ceiling</span>(n_indep <span class="sc">*</span> DEFF)</span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="fu">ceiling</span>(n_ess <span class="sc">/</span> m)</span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Total observations:&quot;</span>, n_ess, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a><span class="co">#&gt; Total observations: 45</span></span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Participants needed:&quot;</span>, K, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a><span class="co">#&gt; Participants needed: 15</span></span></code></pre></div>
+<p><strong>Result</strong>: Instead of 34 independent pairs, need ~15
+participants (45 total observations).</p>
+</div>
+<div id="impact-of-icc" class="section level2">
+<h2>Impact of ICC</h2>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># Compare different ICC values</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>n_indep <span class="ot">&lt;-</span> <span class="dv">50</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="dv">4</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>ICC_values <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.05</span>, <span class="fl">0.10</span>, <span class="fl">0.15</span>, <span class="fl">0.20</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="cf">for</span> (ICC <span class="cf">in</span> ICC_values) {</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  DEFF <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">+</span> (m <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> ICC</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>  K <span class="ot">&lt;-</span> <span class="fu">ceiling</span>(<span class="fu">ceiling</span>(n_indep <span class="sc">*</span> DEFF) <span class="sc">/</span> m)</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;ICC = %.2f: Need %d participants</span><span class="sc">\n</span><span class="st">&quot;</span>, ICC, K))</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>}</span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="co">#&gt; ICC = 0.00: Need 13 participants</span></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a><span class="co">#&gt; ICC = 0.05: Need 15 participants</span></span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a><span class="co">#&gt; ICC = 0.10: Need 17 participants</span></span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a><span class="co">#&gt; ICC = 0.15: Need 19 participants</span></span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a><span class="co">#&gt; ICC = 0.20: Need 20 participants</span></span></code></pre></div>
+</div>
+<div id="when-design-effect-works-well" class="section level2">
+<h2>When Design Effect Works Well</h2>
+<p><strong>Good situations:</strong></p>
+<ul>
+<li>Balanced designs (equal cluster sizes)</li>
+<li>Moderate ICC (0.01 - 0.30)</li>
+<li>Sufficient clusters (K &gt;= 10)</li>
+<li>Simple two-level hierarchy</li>
+</ul>
+<p><strong>Problematic:</strong></p>
+<ul>
+<li>Highly unbalanced clusters</li>
+<li>Very high ICC (&gt; 0.4)</li>
+<li>Small number of clusters (K &lt; 10)</li>
+<li>Complex correlation structures</li>
+<li>Multiple levels of nesting</li>
+</ul>
+<p>For complex designs, consider simulation-based power analysis and
+consult a statistician.</p>
+</div>
+<div id="complete-example-with-clustering" class="section level2">
+<h2>Complete Example with Clustering</h2>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Study parameters</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>sigma <span class="ot">&lt;-</span> <span class="fl">3.3</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>delta <span class="ot">&lt;-</span> <span class="dv">7</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="dv">4</span>  <span class="co"># measurements per participant</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>ICC <span class="ot">&lt;-</span> <span class="fl">0.15</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>dropout <span class="ot">&lt;-</span> <span class="fl">0.20</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co"># Step 1: Independent sample size</span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">power_agreement_exact</span>(</span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>  <span class="at">delta =</span> delta, <span class="at">mu =</span> <span class="dv">0</span>, <span class="at">sigma =</span> sigma,</span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>  <span class="at">p0_star =</span> <span class="fl">0.95</span>, <span class="at">power =</span> <span class="fl">0.80</span>, <span class="at">alpha =</span> <span class="fl">0.05</span></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>)</span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a><span class="co">#&gt; Maximum iterations reached in gamma computation</span></span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a></span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a><span class="co"># Step 2: Account for clustering</span></span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a>DEFF <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">+</span> (m <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> ICC</span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a>n_total <span class="ot">&lt;-</span> <span class="fu">ceiling</span>(result<span class="sc">$</span>n <span class="sc">*</span> DEFF)</span>
+<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a>K_pre <span class="ot">&lt;-</span> <span class="fu">ceiling</span>(n_total <span class="sc">/</span> m)</span>
+<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a></span>
+<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a><span class="co"># Step 3: Account for dropout</span></span>
+<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a>K_final <span class="ot">&lt;-</span> <span class="fu">ceiling</span>(K_pre <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">-</span> dropout))</span>
+<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a></span>
+<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a><span class="co"># Summary</span></span>
+<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Independent pairs:&quot;</span>, result<span class="sc">$</span>n, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a><span class="co">#&gt; Independent pairs: 566</span></span>
+<span id="cb14-26"><a href="#cb14-26" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Design effect:&quot;</span>, <span class="fu">round</span>(DEFF, <span class="dv">3</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb14-27"><a href="#cb14-27" tabindex="-1"></a><span class="co">#&gt; Design effect: 1.45</span></span>
+<span id="cb14-28"><a href="#cb14-28" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Participants (no dropout):&quot;</span>, K_pre, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb14-29"><a href="#cb14-29" tabindex="-1"></a><span class="co">#&gt; Participants (no dropout): 206</span></span>
+<span id="cb14-30"><a href="#cb14-30" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Participants to recruit:&quot;</span>, K_final, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb14-31"><a href="#cb14-31" tabindex="-1"></a><span class="co">#&gt; Participants to recruit: 258</span></span>
+<span id="cb14-32"><a href="#cb14-32" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Total measurements:&quot;</span>, K_final <span class="sc">*</span> m, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb14-33"><a href="#cb14-33" tabindex="-1"></a><span class="co">#&gt; Total measurements: 1032</span></span></code></pre></div>
+</div>
+</div>
+<div id="practical-recommendations" class="section level1">
+<h1>Practical Recommendations</h1>
+<div id="planning-checklist" class="section level2">
+<h2>Planning Checklist</h2>
+<ul>
+<li><label><input type="checkbox"></input>Define research question (hypothesis
+test vs. estimation)</label></li>
+<li><label><input type="checkbox"></input>Choose appropriate power
+method</label></li>
+<li>If possible, obtain pilot estimates (SD, ICC if clustered)</li>
+<li><label><input type="checkbox"></input>Calculate independent sample
+size</label></li>
+<li><label><input type="checkbox"></input>Adjust for clustering (if
+applicable)</label></li>
+<li><label><input type="checkbox"></input>Adjust for dropout</label></li>
+<li><label><input type="checkbox"></input>Conduct sensitivity
+analyses</label></li>
+<li><label><input type="checkbox"></input>Document all assumptions and
+sources</label></li>
+<li><label><input type="checkbox"></input>Pre-register before data
+collection</label></li>
+</ul>
+</div>
+<div id="conservative-planning" class="section level2">
+<h2>Conservative Planning</h2>
+<p>When uncertain:</p>
+<ul>
+<li>Use <strong>upper range</strong> of plausible SD estimates</li>
+<li>Use <strong>upper range</strong> of plausible ICC estimates</li>
+<li>Build in <strong>10-20% buffer</strong> beyond calculated required
+sample size</li>
+<li>Conduct <strong>sensitivity analyses</strong> for key parameters
+(SD, ICC, etc)</li>
+</ul>
+</div>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1 class="unnumbered">References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
+<div id="ref-bland2003cluster" class="csl-entry">
+Bland, J. Martin. 2003. <span>“Cluster Randomised Trials in the Medical
+Literature: Two Bibliometric Surveys.”</span> Talk presented to the RSS
+Medical Section and RSS Liverpool Local Group. <a href="https://www-users.york.ac.uk/~mb55/talks/clusml.htm">https://www-users.york.ac.uk/~mb55/talks/clusml.htm</a>.
+</div>
+<div id="ref-JanShieh2018" class="csl-entry">
+Jan, Show-Li, and Gwowen Shieh. 2018. <span>“The
+<span>Bland-Altman</span> Range of Agreement: Exact Interval Procedure
+and Sample Size Determination.”</span> <em>Comput. Biol. Med.</em> 100
+(September): 247–52.
+</div>
+<div id="ref-lu2016" class="csl-entry">
+Lu, Meng-Jie, Wei-Hua Zhong, Yu-Xiu Liu, Hua-Zhang Miao, Yong-Chang Li,
+and Mu-Huo Ji. 2016. <span>“Sample Size for Assessing Agreement Between
+Two Methods of Measurement by Bland-Altman Method.”</span> <em>The
+International Journal of Biostatistics</em> 12 (2). <a href="https://doi.org/10.1515/ijb-2015-0039">https://doi.org/10.1515/ijb-2015-0039</a>.
+</div>
+<div id="ref-shieh2019" class="csl-entry">
+Shieh, Gwowen. 2019. <span>“Assessing Agreement Between Two Methods of
+Quantitative Measurements: Exact Test Procedure and Sample Size
+Calculation.”</span> <em>Statistics in Biopharmaceutical Research</em>
+12 (3): 352–59. <a href="https://doi.org/10.1080/19466315.2019.1677495">https://doi.org/10.1080/19466315.2019.1677495</a>.
+</div>
+</div>
+</div>
+<div class="footnotes footnotes-end-of-document">
+<hr />
+<ol>
+<li id="fn1"><p>Implications of which are discussed by <span class="citation">Bland (<a href="#ref-bland2003cluster">2003</a>)</span>
+among many others<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

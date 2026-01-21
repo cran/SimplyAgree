@@ -1,21 +1,20 @@
 ---
-title: "Deming Regression"
+title: "Errors-in-Variables Regression"
 author: "Aaron R. Caldwell"
 date: "Last Updated: `r Sys.Date()`"
 output: 
   rmarkdown::html_vignette:
     toc: true
-    toc_depth: 2
+    toc_depth: 3
 bibliography: refs.bib
 link-citations: true
 vignette: >
-  %\VignetteIndexEntry{Deming Regression}
+  %\VignetteIndexEntry{Errors-in-Variables Regression}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
   chunk_output_type: console
 ---
-
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
@@ -30,8 +29,7 @@ Error-in-variables (EIV) models are useful tools to account for measurement erro
 
 Deming regression is one of the simplest forms of of EIV models promoted by [W. Edwards Deming](https://en.wikipedia.org/wiki/W._Edwards_Deming)^[Deming was a titan of the fields of statistics and engineering and I would highly recommend reading some of his academic work and books]. The first to detail the method were @adcock1878 followed by @kummell1879 and @koopmans1936. The name comes from the popularity of Deming's book [@deming1943], and within the field of clinical chemistry, the procedure was simply referred to as "Deming regression" (e.g., @linnet1990). 
 
-
-# Code Demonstration
+# Deming Regression
 
 ## Simple Deming Regression
 
@@ -44,34 +42,37 @@ dat = data.frame(
   x = c(7, 8.3, 10.5, 9, 5.1, 8.2, 10.2, 10.3, 7.1, 5.9),
   y = c(7.9, 8.2, 9.6, 9, 6.5, 7.3, 10.2, 10.6, 6.3, 5.2)
 )
-
 ```
 
-Also, we will assume, based on historical data, that the measurement error ratio is equal to 4.
+Also, we will assume, based on historical data, that the measurement error ratio is equal to 2.
 
-The data can be run through the `dem_reg` function and the results printed.
+The data can be run through the `dem_reg` function and the results printed. 
 
 ```{r}
-dem1 = dem_reg(x = "x",
-               y = "y",
+dem1 = dem_reg(y ~ x,
                data = dat,
-               error.ratio = 4,
+               error.ratio = 2,
                weighted = FALSE)
 dem1
 ```
 
-The resulting regression line can then be plotted.
+The resulting regression line can then be plotted. 
 
 ```{r}
-plot(dem1)
+plot(dem1, interval = "confidence")
 ```
 
-The assumptions of the Deming regression model, primarily normality and homogeneity of variance, can then be check with the `check` method for Deming regression results. Both plots appear to be fine with regards to the assumptions.
+## Model Diagnostics
+
+The assumptions of the Deming regression model, primarily normality and homogeneity of variance, can then be checked with the `check` method for Deming regression results. Both plots appear to be fine with regards to the assumptions.
 
 ```{r}
 check(dem1)
 ```
 
+## Fitted Values and Residuals
+
+After fitting a Deming regression model, you can extract the estimated true values and residuals. The `fitted()` function returns the estimated true Y values, accounting for measurement error. The `residuals()` function returns the optimized residuals by default, which correspond to the perpendicular distances from each point to the regression line.
 
 ## Weighted Deming Regression
 
@@ -88,12 +89,13 @@ Let me demonstrate the problem with using simple Deming regression when the weig
 
 ```{r}
 dem2 = dem_reg(
-  x = "new.lot",
-  y = "old.lot",
+  old.lot ~ new.lot,
   data = ferritin,
   weighted = FALSE
 )
-dem2
+summary(dem2)
+
+plot(dem2)
 
 check(dem2)
 ```
@@ -101,20 +103,145 @@ check(dem2)
 Now, let us see what happens when `weighted` is set to TRUE.
 
 ```{r}
-dem2 = dem_reg(
-  x = "new.lot",
-  y = "old.lot",
+dem3 = dem_reg(
+  old.lot ~ new.lot,
   data = ferritin,
   weighted = TRUE
 )
-dem2
+summary(dem3)
 
-plot(dem2)
+plot(dem3)
 
-check(dem2)
+check(dem3)
 ```
 
-# Calculative Approach
+The weighted model provides a better fit.
+
+# Passing-Bablok Regression
+
+Passing-Bablok regression is a robust, nonparametric alternative to Deming regression for method comparison studies [@passing1983]. Unlike Deming regression, it makes no assumptions about the distribution of the measurement errors. The method estimates the slope as the shifted median of all pairwise slopes between data points, which makes it resistant to outliers.
+
+## When to Use Passing-Bablok
+
+Passing-Bablok regression is particularly useful when:
+
+- Both X and Y are measured with error
+- You want a robust method not sensitive to outliers
+- The relationship is assumed to be linear
+- X and Y are highly positively correlated
+
+## Basic Usage
+
+The `pb_reg()` function implements three variants of Passing-Bablok regression:
+
+- **"scissors"** (default): Most robust, scale-invariant method from @bablok1988
+- **"symmetric"**: Original method from @passing1983
+- **"invariant"**: Scale-invariant method from @passing1984
+
+```{r}
+# Create example data
+pb_data <- data.frame(
+  method1 = c(69.3, 27.1, 61.3, 50.8, 34.4, 92.3, 57.5, 45.5, 33.3, 60.9,
+              56.3, 49.9, 89.7, 28.9, 96.3, 76.6, 83.2, 79.4, 51.7, 32.5,
+              99.1, 14.2, 84.1, 48.8, 61.5, 84.9, 93.2, 73.8, 62.1, 98.6),
+  method2 = c(69.1, 26.7, 61.4, 51.2, 34.7, 88.5, 57.9, 45.1, 33.4, 60.8,
+              66.5, 48.2, 88.3, 29.3, 96.4, 77.1, 82.7, 78.9, 51.6, 28.8,
+              98.4, 12.7, 83.6, 47.3, 61.2, 84.6, 92.1, 73.4, 61.9, 98.6)
+)
+
+# Fit Passing-Bablok regression
+pb1 <- pb_reg(method2 ~ method1, data = pb_data)
+pb1
+```
+
+## Summary and Plots
+
+The summary provides details about the regression coefficients and diagnostic tests:
+
+```{r}
+summary(pb1)
+```
+
+The `plot()` method displays the regression line with data:
+
+```{r}
+plot(pb1)
+```
+
+## Model Diagnostics
+
+The `check()` method provides diagnostic plots specific to Passing-Bablok regression, including the CUSUM linearity test and Kendall's tau correlation:
+ 
+```{r}
+check(pb1)
+```
+
+## Bootstrap Confidence Intervals
+
+For more robust inference, especially with the "invariant" or "scissors" methods, bootstrap confidence intervals are recommended:
+
+```{r}
+pb2 <- pb_reg(method2 ~ method1, 
+              data = pb_data, 
+              replicates = 999)
+summary(pb2)
+```
+
+# Joint Confidence Regions
+
+A theoretically valid, but still experimental, enhancement to the `dem_reg` and `pb_reg` functions is the addition of **joint confidence regions** for the slope and intercept parameters. Traditional confidence intervals treat each parameter separately, but in regression analysis, these parameters are correlated. 
+
+Joint confidence regions account for this correlation by creating an elliptical region in the (intercept, slope) parameter space. This approach, promoted by @sadler2010, provides several advantages:
+
+- **Higher Statistical Power**: The ellipse typically requires 20-50% fewer samples than traditional confidence intervals to detect the same bias
+- **Accounts for Parameter Correlation**: When the measurement range is narrow, slope and intercept are highly negatively correlated
+- **More Appropriate Test**: Testing against a point (e.g., slope=1, intercept=0) is naturally done with a region, not separate intervals
+
+The power advantage is most pronounced when the ratio of maximum to minimum X values is small (< 10:1), which is common in clinical method comparisons.
+
+## Visualizing the Joint Confidence Region
+
+The `plot_joint()` function allows visualization of the confidence region in parameter space:
+
+```{r}
+plot_joint(dem1, 
+           ideal_slope = 1, 
+           ideal_intercept = 0,
+           show_intervals = TRUE)
+```
+
+This plot shows:
+
+- The **red ellipse**: Joint confidence region
+- The **blue rectangle**: Traditional confidence intervals
+- The **black dot**: Estimated (intercept, slope)
+- The **green/red X**: Ideal point (whether enclosed or not)
+
+Notice how the ellipse is smaller than the rectangle, especially in the directions that matter for detecting bias.
+
+For Passing-Bablok regression, bootstrap resampling must be used to obtain the variance-covariance matrix needed for the joint confidence region:
+
+```{r}
+plot_joint(pb2)
+```
+
+## Joint Hypothesis Test
+
+The `joint_test()` function provides a formal hypothesis test for whether the identity line (slope = 1, intercept = 0) falls within the joint confidence region:
+
+```{r}
+joint_test(dem1)
+```
+
+This returns an `htest` object with the Mahalanobis distance (chi-squared statistic) and p-value. The test can also be applied to Passing-Bablok models fitted with bootstrap:
+
+```{r}
+joint_test(pb2)
+```
+
+# Theoretical Details
+
+## Deming Calculative Approach
 
 Deming regression assumes paired measures ($x_i, \space  y_i$) are each measured with error.
 
@@ -125,24 +252,43 @@ $$
 $$
 y_i = Y_i + \delta_i
 $$
+
 We can then measure the relationship between the two variables with the following model.
 
 $$
 \hat Y_i = \beta_0 + \beta_1 \cdot \hat X_i
 $$
-Traditionally there are 2 null hypotheses
 
-First, the intercept is equal to zero
+Traditionally there are 2 null hypotheses.
+
+First, the intercept is equal to zero:
 
 $$
 H_0: \beta_0 = 0 \space vs. \space H_1: \beta_0 \ne 0
 $$
 
-Second, that the slope is equal to one.
+Second, that the slope is equal to one:
 
 $$
 H_0: \beta_1 = 1 \space vs. \space H_1: \beta_0 \ne 1
 $$
+
+# Joint Confidence Region Calculative Approach
+
+The joint $(1-\alpha) \times 100\%$ confidence region for $(\beta_0, \beta_1)$ is defined as:
+
+$$
+(\hat{\beta} - \beta_0)^T V^{-1} (\hat{\beta} - \beta_0) \leq \chi^2_{2,\alpha}
+$$
+
+Where:
+
+- $\hat{\beta}$ = estimated parameters $(\hat{\beta}_0, \hat{\beta}_1)$
+- $\beta_0$ = hypothesized parameters (e.g., $(0, 1)$ for identity)
+- $V$ = variance-covariance matrix
+- $\chi^2_{2,\alpha}$ = chi-square critical value with 2 degrees of freedom
+
+This forms an ellipse in parameter space that accounts for the correlation between slope and intercept.
 
 ## Measurement Error
 
@@ -151,6 +297,7 @@ A Deming regression model also assumes the measurement error ($\sigma^2$) ratio 
 $$
 \lambda = \frac{\sigma^2_\epsilon}{\sigma^2_\delta} 
 $$
+
 In `SimplyAgree`, the error ratio can be set with the `error.ratio` argument. It defaults to 1, but can be changed by the user. If replicate measures are taken, then the user can use the `id` argument to indicate which measures belong to which subject/participant. The measurement error, and the error ratio, will then be estimated from the data itself.
 
 If the data was not measured in replicate then the error ratio ($\lambda$) can be estimated from the coefficient of variation (if that data is available) and the mean of x and y ($\bar x, \space \bar y$).
@@ -179,7 +326,7 @@ $$
 \bar y_w =  \frac{\Sigma^{N}_{i=1} \hat w_i \cdot y_i}{\Sigma^{N}_{i=1} \hat w_i}
 $$
 
-## Estimating the Slope and Interept
+## Estimating the Slope and Intercept
 
 First, there are 3 components ($v_x, \space v_y, \space cov_{xy}$)
 
@@ -198,12 +345,14 @@ The slope ($b_1$) can then be estimated with the following equation.
 $$
 b_1 = \frac{(\lambda \cdot v_y - v_x) + \sqrt{(v_x-\lambda \cdot v_y)^2 + 4 \cdot \lambda \cdot cov_{xy}^2}}{2 \cdot \lambda \cdot cov_{xy}}
 $$
+
 The intercept ($b_0$) can then be estimated with the following equation.
 
 $$
 b_0 = \bar y_w - b_1 \cdot \bar x_w
 $$
+
 The standard errors of b1 and b0 are both estimated using a jackknife method (detailed by @linnet1990).
 
-
 # References
+

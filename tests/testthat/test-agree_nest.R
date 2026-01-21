@@ -9,16 +9,16 @@ testthat::test_that("examples from Zou", {
   reps2$y[5] = 6.35
   reps2$y[9] = 4.09
 
-  nest_test = agree_nest(x="x",y="y",
+  nest_test = suppressWarnings(agree_nest(x="x",y="y",
                          id = "id",
                          data = reps2,
-                         TOST = FALSE)
+                         TOST = FALSE))
 
-  nest_test2 = agree_nest(x="x",y="y",
+  nest_test2 = suppressWarnings(agree_nest(x="x",y="y",
                           id = "id",
                           data = reps2,
                           TOST = FALSE,
-                          prop_bias = TRUE)
+                          prop_bias = TRUE))
   nest_test_new = agreement_limit(x="x",y="y",
                          id = "id",
                          data = reps2,
@@ -35,6 +35,13 @@ testthat::test_that("examples from Zou", {
                                   data_type = "nest",
                                   alpha = .025,
                                   prop_bias = TRUE)
+  nest_test_new_asym = agreement_limit(x="x",y="y",
+                                   id = "id",
+                                   data = reps2,
+                                   data_type = "nest",
+                                   alpha = .025,
+                                   prop_bias = TRUE,
+                                   lmer_df = "a")
   testthat::expect_equal(nest_test_new$loa$bias,0.7234979,
                          tolerance = .0001)
   ch1 = check(nest_test_new)
@@ -42,7 +49,7 @@ testthat::test_that("examples from Zou", {
                                   id = "id",
                                   data = reps2,
                                   data_type = "nest",
-                                  log_tf =TRUE)
+                                  log_tf = TRUE)
 
   nest_test_newlog2 = agreement_limit(x="x",y="y",
                                      id = "id",
@@ -121,27 +128,27 @@ testthat::test_that("examples from Zou", {
   ptest = plot(nest_test2_new)
   ptest = plot(nest_test_new)
 
-  nest_test3_ccc = agree_nest(x="x",y="y",
+  nest_test3_ccc = suppressWarnings(agree_nest(x="x",y="y",
                           id = "id",
                           data = reps2,
                           TOST = FALSE,
                           prop_bias = TRUE,
-                          ccc = FALSE)
+                          ccc = FALSE))
 
-  nest_test3 = agree_nest(x="x",y="y",
+  nest_test3 = suppressWarnings(agree_nest(x="x",y="y",
                           id = "id",
                           data = reps2,
                           TOST = FALSE,
-                          prop_bias = TRUE)
+                          prop_bias = TRUE))
   ptest = plot(nest_test3)
 
 
-  nest_test3 = agree_nest(x="x",y="y",
+  nest_test3 = suppressWarnings(agree_nest(x="x",y="y",
                           id = "id",
                           data = reps,
                           TOST = FALSE,
                           delta = 5,
-                          prop_bias = TRUE)
+                          prop_bias = TRUE))
   ptest = plot(nest_test3)
 
   testthat::expect_equivalent(nest_test$loa$estimate,
@@ -162,10 +169,10 @@ testthat::test_that("examples from Zou", {
   testthat::expect_equivalent(nest_test$loa$upper.ci[2:3],
                               c(-.33,11.27),
                               tolerance = 0.01)
-  nest_test = agree_nest(x="x",y="y",
+  nest_test = suppressWarnings(agree_nest(x="x",y="y",
                          delta = 2,
                          id = "id",
-                         data = reps2)
+                         data = reps2))
   pr_test = print(nest_test)
   p = plot(nest_test, type = 1)
   p = plot(nest_test, type = 2)
@@ -173,15 +180,15 @@ testthat::test_that("examples from Zou", {
   #expect_warning(check(nest_test)$p_het)
 
   nest = reps2
-  nest_test2 = agree_nest(
+  nest_test2 = suppressWarnings(agree_nest(
     x = "x",
     y = "y",
     delta = 2.5,
     id = "id",
     data = nest
-  )
+  ))
 
-  nest_test3 = agree_nest(
+  nest_test3 = suppressWarnings(agree_nest(
     x = "x",
     y = "y",
     delta = 2.5,
@@ -189,9 +196,9 @@ testthat::test_that("examples from Zou", {
     data = nest,
     agree.level = .8,
     conf.level = .75
-  )
+  ))
 
-  nest_test4 = agree_nest(
+  nest_test4 = suppressWarnings(agree_nest(
     x = "x",
     y = "y",
     delta = 2.5,
@@ -199,7 +206,7 @@ testthat::test_that("examples from Zou", {
     data = nest,
     agree.level = .75,
     conf.level = .8
-  )
+  ))
 
   pr_test = print(nest_test)
   p = plot(nest_test, type = 1)
@@ -281,13 +288,13 @@ testthat::test_that("example from error message",{
                                        rnorm(3))
                     )
 
-  TSTnest = agree_nest(x = "ACT_Sleep_Time",
+  TSTnest = suppressWarnings(agree_nest(x = "ACT_Sleep_Time",
                        y = "E_TST1_minutes",
                        id = "IDNum",
                        #delta = 100,
                        data = data2,
                        agree.level = .8,
-                       TOST = FALSE)
+                       TOST = FALSE))
 
   testthat::expect_equivalent(TSTnest$loa$estimate,
                               c(.597,-.568,1.761),
@@ -299,13 +306,13 @@ testthat::test_that("example from error message",{
                               c(.164,-1.373,1.268),
                               tolerance = 0.001)
 
-  TSTrep = agree_reps(x = "ACT_Sleep_Time",
+  TSTrep = suppressWarnings(agree_reps(x = "ACT_Sleep_Time",
                        y = "E_TST1_minutes",
                        id = "IDNum",
                        #delta = 100,
                        data = data2,
                        agree.level = .8,
-                      TOST = FALSE)
+                      TOST = FALSE))
 
   testthat::expect_equivalent(TSTrep$loa$estimate,
                               c(.717,-.665,2.099),
@@ -320,6 +327,5 @@ testthat::test_that("example from error message",{
 
 
 })
-
 
 
