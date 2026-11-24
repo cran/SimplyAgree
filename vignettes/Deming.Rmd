@@ -1,5 +1,6 @@
 ---
 title: "Errors-in-Variables Regression"
+description: "Errors-in-variables regression for method comparison in R: Deming regression with dem_reg() and Passing-Bablok regression with pb_reg()."
 author: "Aaron R. Caldwell"
 date: "Last Updated: `r Sys.Date()`"
 output: 
@@ -21,6 +22,7 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+has_deming <- requireNamespace("deming", quietly = TRUE)
 ```
 
 # Background
@@ -44,7 +46,7 @@ dat = data.frame(
 )
 ```
 
-Also, we will assume, based on historical data, that the measurement error ratio is equal to 2.
+Also, we will assume, based on historical data, that the measurement error ratio is equal to 2 (i.e., the error variance of x is twice the error variance of y).
 
 The data can be run through the `dem_reg` function and the results printed. 
 
@@ -58,7 +60,7 @@ dem1
 
 The resulting regression line can then be plotted. 
 
-```{r}
+```{r, fig.alt = "Scatter plot of y against x with the fitted Deming regression line and its confidence band."}
 plot(dem1, interval = "confidence")
 ```
 
@@ -66,7 +68,7 @@ plot(dem1, interval = "confidence")
 
 The assumptions of the Deming regression model, primarily normality and homogeneity of variance, can then be checked with the `check` method for Deming regression results. Both plots appear to be fine with regards to the assumptions.
 
-```{r}
+```{r, fig.alt = "Two diagnostic panels for the Deming regression: homogeneity of the residuals against fitted values, and normality of the residuals."}
 check(dem1)
 ```
 
@@ -77,8 +79,9 @@ After fitting a Deming regression model, you can extract the estimated true valu
 ## Weighted Deming Regression
 
 For this example, I will rely upon the "ferritin" data from the `deming` R package.
+`r if (!has_deming) "*The code in this section was not run because the deming package is not installed.*"`
 
-```{r}
+```{r, eval = has_deming}
 library(deming)
 data('ferritin')
 
@@ -87,7 +90,7 @@ head(ferritin)
 
 Let me demonstrate the problem with using simple Deming regression when the weights are helpful. When we look at the two plots below, we can see there is severe problem with using the "un-weighted" model.
 
-```{r}
+```{r, eval = has_deming, fig.alt = c("Scatter plot of old.lot against new.lot ferritin values with the unweighted Deming regression line.", "Diagnostic panels for the unweighted Deming regression of the ferritin data: homogeneity and normality of the residuals.")}
 dem2 = dem_reg(
   old.lot ~ new.lot,
   data = ferritin,
@@ -102,7 +105,7 @@ check(dem2)
 
 Now, let us see what happens when `weighted` is set to TRUE.
 
-```{r}
+```{r, eval = has_deming, fig.alt = c("Scatter plot of old.lot against new.lot ferritin values with the weighted Deming regression line.", "Diagnostic panels for the weighted Deming regression of the ferritin data: homogeneity and normality of the residuals.")}
 dem3 = dem_reg(
   old.lot ~ new.lot,
   data = ferritin,
@@ -164,7 +167,7 @@ summary(pb1)
 
 The `plot()` method displays the regression line with data:
 
-```{r}
+```{r, fig.alt = "Scatter plot of method2 against method1 with the fitted Passing-Bablok regression line."}
 plot(pb1)
 ```
 
@@ -172,7 +175,7 @@ plot(pb1)
 
 The `check()` method provides diagnostic plots specific to Passing-Bablok regression, including the CUSUM linearity test and Kendall's tau correlation:
  
-```{r}
+```{r, fig.alt = "Four Passing-Bablok diagnostic panels: monotonic relationship, ranked residuals, CUSUM linearity test, and the distribution of pairwise slopes."}
 check(pb1)
 ```
 
@@ -189,21 +192,26 @@ summary(pb2)
 
 # Joint Confidence Regions
 
-A theoretically valid, but still experimental, enhancement to the `dem_reg` and `pb_reg` functions is the addition of **joint confidence regions** for the slope and intercept parameters. Traditional confidence intervals treat each parameter separately, but in regression analysis, these parameters are correlated. 
+An experimental enhancement to the `dem_reg` and `pb_reg` functions is the addition of **joint confidence regions** for the slope and intercept parameters. Traditional confidence intervals treat each parameter separately, but in regression analysis, these parameters are correlated.
 
-Joint confidence regions account for this correlation by creating an elliptical region in the (intercept, slope) parameter space. This approach, promoted by @sadler2010, provides several advantages:
+Joint confidence regions account for this correlation with a region in the (intercept, slope) parameter space. This approach, promoted by @sadler2010, provides several advantages:
 
-- **Higher Statistical Power**: The ellipse typically requires 20-50% fewer samples than traditional confidence intervals to detect the same bias
+- **Higher Statistical Power**: when the measurement range is narrow, the joint region can need several-fold (sometimes far) fewer samples than the two confidence intervals to detect the same bias
 - **Accounts for Parameter Correlation**: When the measurement range is narrow, slope and intercept are highly negatively correlated
 - **More Appropriate Test**: Testing against a point (e.g., slope=1, intercept=0) is naturally done with a region, not separate intervals
 
 The power advantage is most pronounced when the ratio of maximum to minimum X values is small (< 10:1), which is common in clinical method comparisons.
 
+Two regions are available through the `method` argument:
+
+- **`"sadler"`** (default for Deming regression): the sum-of-squares region of @sadler2010. It uses the Deming sum of squares directly, not a variance-covariance matrix, and is not exactly an ellipse. In simulations it rejected a true identity line 4.3-5.9% of the time at a nominal 5%, from n = 10 upward.
+- **`"wald"`** (the only option for Passing-Bablok regression): an ellipse from the variance-covariance matrix of the estimates. For Deming regression that matrix is a delete-one jackknife, and the test is liberal in small samples (about 8.5% at n = 10 and 7.4% at n = 20 at a nominal 5%). For Passing-Bablok regression, use bootstrap or delete-d jackknife resampling (both held about 5% in simulations).
+
 ## Visualizing the Joint Confidence Region
 
 The `plot_joint()` function allows visualization of the confidence region in parameter space:
 
-```{r}
+```{r, fig.alt = "Joint confidence region for the Deming intercept and slope as a red curve, the separate confidence intervals as a blue rectangle, the estimate as a black dot, and the ideal point of intercept 0 and slope 1 marked with an X."}
 plot_joint(dem1, 
            ideal_slope = 1, 
            ideal_intercept = 0,
@@ -212,16 +220,16 @@ plot_joint(dem1,
 
 This plot shows:
 
-- The **red ellipse**: Joint confidence region
+- The **red curve**: Joint confidence region (Sadler's region by default; `method = "wald"` draws the ellipse)
 - The **blue rectangle**: Traditional confidence intervals
 - The **black dot**: Estimated (intercept, slope)
 - The **green/red X**: Ideal point (whether enclosed or not)
 
-Notice how the ellipse is smaller than the rectangle, especially in the directions that matter for detecting bias.
+Notice how the region is narrower than the rectangle, especially in the directions that matter for detecting bias.
 
-For Passing-Bablok regression, bootstrap resampling must be used to obtain the variance-covariance matrix needed for the joint confidence region:
+For Passing-Bablok regression, bootstrap (or delete-d jackknife) resampling must be used to obtain the variance-covariance matrix needed for the joint confidence region:
 
-```{r}
+```{r, fig.alt = "Joint confidence ellipse for the Passing-Bablok intercept and slope, with the estimate and the ideal point of intercept 0 and slope 1 marked."}
 plot_joint(pb2)
 ```
 
@@ -233,7 +241,7 @@ The `joint_test()` function provides a formal hypothesis test for whether the id
 joint_test(dem1)
 ```
 
-This returns an `htest` object with the Mahalanobis distance (chi-squared statistic) and p-value. The test can also be applied to Passing-Bablok models fitted with bootstrap:
+This returns an `htest` object with Sadler's F statistic and p-value. The Wald version (Mahalanobis distance) is available with `joint_test(dem1, method = "wald")`. The test can also be applied to Passing-Bablok models fitted with bootstrap, where it is always the Wald test:
 
 ```{r}
 joint_test(pb2)
@@ -270,29 +278,48 @@ $$
 Second, that the slope is equal to one:
 
 $$
-H_0: \beta_1 = 1 \space vs. \space H_1: \beta_0 \ne 1
+H_0: \beta_1 = 1 \space vs. \space H_1: \beta_1 \ne 1
 $$
 
 # Joint Confidence Region Calculative Approach
 
-The joint $(1-\alpha) \times 100\%$ confidence region for $(\beta_0, \beta_1)$ is defined as:
+## Sadler's region (Deming regression, default)
+
+Deming regression with error ratio $\lambda$ and weights $w_i$ minimizes
 
 $$
-(\hat{\beta} - \beta_0)^T V^{-1} (\hat{\beta} - \beta_0) \leq \chi^2_{2,\alpha}
+S(a, b) = \sum_{i=1}^n \frac{w_i (y_i - a - b x_i)^2}{1 + \lambda b^2}
 $$
 
-Where:
+Following @sadler2010 (after Draper and Smith), with $\hat S$ the minimum, the joint $(1-\alpha) \times 100\%$ confidence region for $(\beta_0, \beta_1)$ is the set of $(a, b)$ with
+
+$$
+F = \frac{(S(a, b) - \hat S)/2}{\hat S / (n - 2)} \leq F_{2, n-2, 1-\alpha}
+$$
+
+and the joint test of a hypothesized $(a_0, b_0)$ (e.g., $(0, 1)$ for identity) compares $F$ at that point with the $F(2, n - 2)$ distribution. No variance-covariance matrix is needed, and only the error ratio (not the size of the errors) matters. For a fixed slope the condition is quadratic in the intercept, so the region is drawn exactly.
+
+## Wald ellipse
+
+This was my original solution for this joint testing problem. I would, for Deming regression, stick with Sadler's region.
+
+With `method = "wald"` the region is
+
+$$
+(\hat{\beta} - \beta_0)^T V^{-1} (\hat{\beta} - \beta_0) \leq 2 F_{2, n-2, 1-\alpha}
+$$
+
+(or $\chi^2_{2, 1-\alpha}$ with `test_method = "asymptotic"`), where:
 
 - $\hat{\beta}$ = estimated parameters $(\hat{\beta}_0, \hat{\beta}_1)$
 - $\beta_0$ = hypothesized parameters (e.g., $(0, 1)$ for identity)
-- $V$ = variance-covariance matrix
-- $\chi^2_{2,\alpha}$ = chi-square critical value with 2 degrees of freedom
+- $V$ = variance-covariance matrix (jackknife for Deming; bootstrap or delete-d jackknife for Passing-Bablok)
 
 This forms an ellipse in parameter space that accounts for the correlation between slope and intercept.
 
 ## Measurement Error
 
-A Deming regression model also assumes the measurement error ($\sigma^2$) ratio is constant.
+A Deming regression model also assumes the measurement error ($\sigma^2$) ratio is constant. In `SimplyAgree`, the error ratio is always the error variance of x divided by the error variance of y.
 
 $$
 \lambda = \frac{\sigma^2_\epsilon}{\sigma^2_\delta} 
@@ -303,7 +330,7 @@ In `SimplyAgree`, the error ratio can be set with the `error.ratio` argument. It
 If the data was not measured in replicate then the error ratio ($\lambda$) can be estimated from the coefficient of variation (if that data is available) and the mean of x and y ($\bar x, \space \bar y$).
 
 $$
-\lambda = \frac{(CV_y \cdot \bar y)^2}{(CV_x \cdot \bar x)^2}
+\lambda = \frac{(CV_x \cdot \bar x)^2}{(CV_y \cdot \bar y)^2}
 $$
 
 ## Weights

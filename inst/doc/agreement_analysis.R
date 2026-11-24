@@ -18,6 +18,27 @@ tolerance_limit(
   cor_type = "sym" # Set correlation structure as Compound Symmetry
 )
 
+## ----eval = FALSE-------------------------------------------------------------
+# # random intercept for each subject, plus AR(1) correlation of the residuals
+# tolerance_limit(
+#   data = temps,
+#   x = "trec_pre",
+#   y = "teso_pre",
+#   id = "id",
+#   time = "trial_num",
+#   model = "lme",
+#   cor_type = "ar1"
+# )
+# 
+# # nested random intercepts: clubs within golfers
+# tolerance_limit(
+#   data = golf, # a data set with columns golfer, club, x, and y
+#   x = "x",
+#   y = "y",
+#   id = c("golfer", "club"),
+#   model = "lme"
+# )
+
 ## -----------------------------------------------------------------------------
 test1 = tolerance_limit(data = temps,
                         x = "teso_pre",
@@ -55,7 +76,7 @@ a3 = agreement_limit(x = "x",
                 agree.level = .95)
 a3
 
-## -----------------------------------------------------------------------------
+## ----fig.alt = "Differences between trec_pre and teso_pre against their average, with the bias, tolerance limits, and the maximal allowable difference of 0.25."----
 res1 = tolerance_limit(
   data = temps,
   x = "trec_pre", # First measure
@@ -66,7 +87,7 @@ res1 = tolerance_limit(
 )
 plot(res1, delta = .25) # Set maximal allowable difference to .25 units
 
-## -----------------------------------------------------------------------------
+## ----fig.alt = c("Diagnostic panels for agreement_limit: normality of the differences, heteroskedasticity, and proportional bias.", "Diagnostic panels for tolerance_limit: normality of the differences, heteroskedasticity, and proportional bias.")----
 test_agree = agreement_limit(x = "x",
                              y = "y",
                              data = reps)
@@ -79,7 +100,7 @@ test_tol = tolerance_limit(x = "x",
 
 check(test_tol)
 
-## -----------------------------------------------------------------------------
+## ----fig.alt = c("Tolerance limits for the reps data that change with the mean to account for proportional bias.", "Diagnostic panels for tolerance_limit with proportional bias modeled; the proportional bias panel is now flat.")----
 
 test_tol = tolerance_limit(x = "x",
                            y = "y",
@@ -116,7 +137,7 @@ tolerance_limit(
   cor_type = "sym" # Set correlation structure as Compound Symmetry
 )
 
-## -----------------------------------------------------------------------------
+## ----fig.alt = c("Bland-Altman plot of 750 simulated pairs drawn as individual points.", "Bland-Altman plot of 750 simulated pairs drawn as a heatmap of 2D bin counts.", "Bland-Altman plot of 750 simulated pairs drawn as 2D density contour lines.", "Bland-Altman plot of 750 simulated pairs drawn as filled 2D density contours.", "Bland-Altman plot of 750 simulated pairs drawn with stat_density_2d.")----
 set.seed(81346)
 x = rnorm(750, 100, 10)
 diff = rnorm(750, 0, 1)

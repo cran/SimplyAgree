@@ -14,12 +14,15 @@
 #' @param conf.level The confidence level required. Default is 95%.
 #' @param weighted Logical indicator (TRUE/FALSE) for whether to use weighted Deming regression. Default is FALSE.
 #' @param weights an optional vector of weights to be used in the fitting process. Should be NULL or a numeric vector.
-#' @param error.ratio Ratio of the two error variances. Default is 1. This argument is ignored if subject identifiers are provided.
+#' @param error.ratio Ratio of the measurement error variance of x to that of y, i.e., var(x)/var(y),
+#'   where var() denotes the error (not total) variance of each method. Default is 1 (equal error variances).
+#'   Values greater than 1 indicate that x is measured with more error than y.
+#'   This argument is ignored if subject identifiers are provided.
 #' @param model Logical. If TRUE (default), the model frame is stored in the returned object.
 #'   This is needed for methods like `plot()`, `fitted()`, `residuals()`, and `predict()` to work
 #'   without supplying `data`. If FALSE, the model frame is not stored (saves memory for large datasets),
 #'   but these methods will require a `data` argument.
-#' @param keep_data Logical indicator (TRUE/FALSE). If TRUE, the jacknife samples are returned; default is FALSE.
+#' @param keep_data Logical indicator (TRUE/FALSE). If TRUE, the jackknife samples are returned; default is FALSE.
 #' @param ... Additional arguments (currently unused).
 #'
 #' @details
@@ -35,7 +38,9 @@
 #' If the data are measured in replicates, then the measurement error can be directly derived from the data.
 #' This can be accomplished by indicating the subject identifier with the id argument.
 #' When the replicates are not available in the data,
-#' then the ratio of error variances (y/x) can be provided with the error.ratio argument.
+#' then the ratio of error variances, var(x)/var(y), can be provided with the error.ratio argument.
+#' When subject identifiers are provided, the error ratio is instead estimated from the replicates
+#' as the within-subject variance of x divided by the within-subject variance of y.
 #'
 #'
 #' @section Interface Change:
@@ -66,16 +71,27 @@
 #'   - `weighted`: Whether weighted regression was used.
 #'   - `weights`: Weights used in fitting.
 #'   - `conf.level`: Confidence level used.
-#'   - `resamples`: List containing resamples from jacknife procedure (if keep_data = TRUE).
+#'   - `resamples`: List containing resamples from jackknife procedure (if keep_data = TRUE).
 #'
 #' @examples
-#' \dontrun{
-#' # New formula interface (recommended)
-#' model <- dem_reg(y ~ x, data = mydata)
+#' # Peak flow: mini vs Wright meter (Bland & Altman, 1986)
+#' data("ba1986")
+#' fit <- dem_reg(mini1 ~ wright1, data = ba1986)
+#' summary(fit)
+#' plot(fit)
 #'
-#' # Old interface (still works with deprecation warning)
-#' model <- dem_reg(x = "x", y = "y", data = mydata)
-#' }
+#' # Joint test of intercept = 0 and slope = 1
+#' joint_test(fit)
+#'
+#' # Known error ratio, var(x) / var(y)
+#' dem_reg(mini1 ~ wright1, data = ba1986, error.ratio = 2)
+#'
+#' # Replicate measurements: the error ratio is estimated from the replicates
+#' data("reps")
+#' dem_reg(y ~ x, data = reps, id = "id")
+#'
+#' # Weighted Deming regression (error proportional to the level)
+#' dem_reg(mini1 ~ wright1, data = ba1986, weighted = TRUE)
 #'
 #' @references
 #' Linnet, K. (1990) Estimation of the linear relationship between the measurements of two methods with proportional errors. Statistics in Medicine, 9, 1463-1473.
@@ -84,7 +100,7 @@
 #'
 #' Sadler, W.A. (2010). Joint parameter confidence regions improve the power of parametric regression in method-comparison studies. Accreditation and Quality Assurance, 15, 547-554.
 #'
-#' @importFrom stats pnorm pt qnorm qt lm anova aov complete.cases cor dchisq qchisq sd var prcomp model.frame model.matrix model.response terms delete.response na.pass
+#' @importFrom stats pnorm pt qnorm qt pf qf lm anova aov complete.cases cor dchisq qchisq pchisq sd var prcomp model.frame model.matrix model.response terms delete.response na.pass
 #' @importFrom graphics text
 #' @import ggplot2
 #' @export
@@ -313,7 +329,8 @@ dem_reg <- function(formula = NULL,
 }
 
 
-.compute_joint_region <- function(intercept, slope, vcov, conf.level = 0.95, n_points = 100) {
+.compute_joint_region <- function(intercept, slope, vcov, conf.level = 0.95,
+                                  n_points = 100, df_residual = NULL) {
 
   # Check for invalid vcov matrix
   if (any(!is.finite(vcov))) {
@@ -321,8 +338,12 @@ dem_reg <- function(formula = NULL,
     return(NULL)
   }
 
-  # Chi-square critical value for 2 df
-  chi2_crit <- qchisq(conf.level, df = 2)
+  # Use F-distribution (finite-sample) when df_residual is available
+  if (!is.null(df_residual) && is.finite(df_residual) && df_residual > 0) {
+    crit_value <- 2 * qf(conf.level, df1 = 2, df2 = df_residual)
+  } else {
+    crit_value <- qchisq(conf.level, df = 2)
+  }
 
   # Eigendecomposition of covariance matrix with error handling
   eig <- tryCatch(
@@ -351,7 +372,7 @@ dem_reg <- function(formula = NULL,
   circle <- cbind(cos(theta), sin(theta))
 
   # Transform to ellipse
-  ellipse <- t(v %*% diag(sqrt(lambda * chi2_crit)) %*% t(circle))
+  ellipse <- t(v %*% diag(sqrt(lambda * crit_value)) %*% t(circle))
 
   # Center at (intercept, slope)
   ellipse[, 1] <- ellipse[, 1] + intercept
@@ -365,7 +386,8 @@ dem_reg <- function(formula = NULL,
 
 .test_joint_enclosure <- function(intercept, slope, vcov,
                                   ideal_intercept, ideal_slope,
-                                  conf.level = 0.95) {
+                                  conf.level = 0.95,
+                                  df_residual = NULL) {
 
   # Check for invalid vcov matrix
   if (any(!is.finite(vcov))) {
@@ -394,66 +416,28 @@ dem_reg <- function(formula = NULL,
 
   mahal_dist <- as.numeric(t(diff) %*% vcov_inv %*% diff)
 
-  # Chi-square critical value
-  chi2_crit <- qchisq(conf.level, df = 2)
-
-  is_enclosed <- mahal_dist <= chi2_crit
+  # Use F-distribution (finite-sample) when df_residual is available,
+  # otherwise fall back to chi-squared (asymptotic)
+  if (!is.null(df_residual) && is.finite(df_residual) && df_residual > 0) {
+    f_crit <- 2 * qf(conf.level, df1 = 2, df2 = df_residual)
+    is_enclosed <- mahal_dist <= f_crit
+    p_value <- pf(mahal_dist / 2, df1 = 2, df2 = df_residual, lower.tail = FALSE)
+    crit_value <- f_crit
+    dist_name <- "F"
+  } else {
+    chi2_crit <- qchisq(conf.level, df = 2)
+    is_enclosed <- mahal_dist <= chi2_crit
+    p_value <- 1 - pchisq(mahal_dist, df = 2)
+    crit_value <- chi2_crit
+    dist_name <- "chi-squared"
+  }
 
   list(
     mahalanobis_distance = mahal_dist,
-    chi2_critical = chi2_crit,
+    critical_value = crit_value,
+    distribution = dist_name,
+    df_residual = df_residual,
     is_enclosed = is_enclosed,
-    p_value = 1 - pchisq(mahal_dist, df = 2)
+    p_value = p_value
   )
-}
-
-.get_simple_eiv_data <- function(object) {
-  if (!inherits(object, "simple_eiv")) {
-    stop("Object must be of class 'simple_eiv'")
-  }
-
-  mf <- model.frame(object, na.action = na.pass)
-  mt <- attr(mf, "terms")
-
-  # Extract y and x from formula
-  # model.response gets column 1 (y)
-  y_vals <- model.response(mf, "numeric")
-
-  # mf[[2]] gets column 2 (x) directly from model frame, not model matrix
-  x_vals <- mf[[2]]
-
-  if (ncol(mf) == 3) {
-    # id can be either a column name (string) or the actual values
-
-    id_vals <- mf[[3]]
-
-
-    df <- data.frame(id = id_vals, x = x_vals, y = y_vals)
-    df <- df[complete.cases(df), ]
-
-    df2 <- df %>%
-      group_by(id) %>%
-      mutate(mean_y = mean(y, na.rm = TRUE),
-             mean_x = mean(x, na.rm = TRUE),
-             n_x = sum(!is.na(x)),
-             n_y = sum(!is.na(y))) %>%
-      ungroup() %>%
-      mutate(diff_y = y - mean_y,
-             diff_y2 = diff_y^2,
-             diff_x = x - mean_x,
-             diff_x2 = diff_x^2)
-
-    df3 <- df2 %>%
-      group_by(id) %>%
-      summarize(x = mean(x, na.rm = TRUE),
-                y = mean(y, na.rm = TRUE),
-                .groups = 'drop') %>%
-      drop_na()
-
-
-  } else {
-    df3 <- data.frame(x = x_vals, y = y_vals)
-    df3 <- df3[complete.cases(df3), ]
-  }
-  return(df3)
 }

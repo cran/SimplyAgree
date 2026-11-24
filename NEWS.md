@@ -1,9 +1,81 @@
 # NEWS
 
+# SimplyAgree 0.4.1
+
+## Results that change
+
+- `agree_np()` with `prop_bias = FALSE` and `TOST = TRUE` (the default): the confidence bounds of the limits of agreement were computed at `conf.level` (e.g. 95%) although they were reported, and printed, as `1 - 2 * (1 - conf.level)` (e.g. 90%). They are now computed at the reported level, so they are narrower than before. The bias bounds, the hypothesis test, `TOST = FALSE` and `prop_bias = TRUE` are unchanged.
+
+## Bug fixes
+
+- `agree_np()` and its `plot()` could run without end on data with many exact ties (for example, the data of GitHub issue #50), depending on the random number state. The bootstrap standard errors of the quantile regressions came from quantreg's `summary(se = "boot")`, whose simplex fits can cycle on such resamples. The bootstrap now uses the same resampling of (x, y) pairs (200 resamples) but fits each resample with the Frisch-Newton interior point method (`quantreg::rq.fit.fnb()`), which always ends. The estimates are unchanged; the standard errors agree with quantreg's bootstrap up to Monte Carlo error.
+- The `plot()` of `agree_np()` now shows the printed limits and bounds. It used to refit the quantile regressions with the mean as a covariate whatever `prop_bias` was (so with `prop_bias = FALSE` it drew sloped limits instead of the constant ones), drew the bands of the limits at `conf.level` even with `TOST = TRUE`, and drew a new bootstrap. The plot now uses the fitted model and the bootstrap covariance stored in the result (new element `qr_vcov`).
+- `find_n()` now returns `NA` with a warning when the minimum sample size is below the range evaluated, instead of the first `N` in the range.
+- **Nested limits of agreement** (`agreement_limit(data_type = "nest")`): the confidence bounds of the limits were too narrow. The bias variance and the variance piece with n - 1 degrees of freedom used the between-subject variance alone, rather than the variance of the subject mean differences (between + within / m_h; Zou, 2011), so the within-subject part of it got no uncertainty. In simulations (10 to 40 subjects, 2 to 5 pairs each), the default MOVER bounds covered 85% to 94% of the time instead of 95%, worst when the within-subject variance dominates; after the fix, 94% to 97%. The bounds now reproduce Zou's published example (and `agree_nest()`) closely. The limits themselves and the bias are unchanged. (`agree_nest()` with `prop_bias = TRUE`, superseded, has the same substitution and is unchanged.)
+
+# SimplyAgree 0.4.0
+
+## Results that change
+
+Several fixes change results from earlier versions:
+
+- **ICC intervals** (`reli_stats()`, `reli_aov()`) are now two-sided; a "95%" interval was previously 90%. Old results at level `c` equal new results at `1 - 2 * (1 - c)`.
+- **CCC for replicate and nested data** (`ccc_test()`, `agree_reps()`, `agree_nest()`): new variance-components estimate for replicate data, and subject-level (jackknife) standard errors; the old intervals were too narrow.
+- **Tolerance limits** (`tolerance_limit()`) with variance functions, clustered data or the bootstrap; prediction limits are unchanged unless a variance function is used.
+- **Deming joint tests** (`joint_test()`, `plot_joint()`, and the joint power of `deming_power_sim()`/`deming_sample_size()`) now use Sadler's sum-of-squares F test. Version 0.3.0 used a chi-squared Wald test from the jackknife variance-covariance matrix, which rejected a true identity line up to 14% of the time at n = 10 (nominal 5%); `method = "wald", test_method = "asymptotic"` reproduces it.
+- **`pb_reg()`**: `error.ratio != 1` is now an error; bootstrap standard errors were 4-5 times too small before; tie-corrected slope intervals.
+- `find_n()` can return a sample size one larger; `agreement_limit(data_type = "reps")` and `"nest"` change with unbalanced or missing data.
+
+## Reliability
+
+- New `icc_test()` (one ICC as an `htest`, two-sided F intervals, REML for missing data, optional subject bootstrap), `reli_err_test()` (SEM, SEE, SEP and CVs), and `mdc_test()` (minimal detectable change).
+- New `reli_facet_test()` (experimental; **its name may change**) for subjects measured more than once by each rater or device: exchangeable repeats within subject-by-rater cells, or shared occasions (`occasion`, e.g. every rater on day 1 and day 2). Intra-rater, inter-rater and overall coefficients and SEMs from the generalizability-theory model, in consistency or agreement forms, with D-study projections, exact or MLS/Satterthwaite intervals, REML for unbalanced data, and the subject bootstrap. `icc_test()` and `reli_err_test()` point to it when the data have repeats, and `mdc_test()` accepts its SEMs.
+- New `power_icc()` and `precision_icc()` for ICC power and interval-width sample sizes, including missing data.
+- New `summary()`, `plot()` and `check()` methods for these results, with a new section in the power vignette.
+- `reli_stats()` and `reli_aov()` are superseded and now use the same engine. Beyond the two-sided intervals: observed-data degrees of freedom with missing data, subject bootstrap, delta-method intervals for SEE/SEP/CV, ANOVA variance components, and stricter data checks.
+- The jamovi reliability analysis uses the new functions.
+
+## Categorical ratings
+
+- New `cac_test()` (Gwet's AC1/AC2, Fleiss' kappa, Krippendorff's alpha, percent agreement; matches irrCAC) and `ord_kappa_test()` (model-based kappa for ordinal ratings from many raters, with group comparisons; #63), with `summary()` and `plot()` methods.
+- New vignette, "Agreement for Categorical and Ordinal Ratings".
+- `agree_coef()` is superseded by `cac_test()`; it gains `categories` and `weights`, and no longer fails or mislabels in edge cases.
+
+## Agreement
+
+- New `ccc_test()`: concordance correlation coefficient as an `htest`, with an opt-in studentized subject bootstrap for replicate data.
+- `agreement_limit()` gains `bound_type` (`"iu"` default, unchanged; `"joint"`), and prints within-subject SDs for replicate data.
+- `tolerance_limit()`:
+  - limits now use the residual SD for each row when there is a variance function (they were too narrow);
+  - new `bound_type`, `model = "lme"` (including nested `id`), and `conf_level`;
+  - corrected analytic limits for clustered data, and a fixed, faster bootstrap (`tol_method = "boot_cal"`, formerly `"perc"`);
+  - its returned `model` now works with `update()` and `emmeans()`.
+- `loa_lme()` is deprecated in favor of `tolerance_limit(model = "lme")`.
+- Fixed plots failing after saving and reloading (e.g. in jamovi; #76), and `plot()`/`print()` failing when settings were expressions (#50).
+
+## Agreement power and sample size
+
+- New `power_agreement_limit()` (Lu et al. 2016; reproduces PASS); `blandPowerCurve()` is superseded by it.
+- `power_agreement_exact()`, `agree_expected_half()`, `agree_assurance()` and `blandPowerCurve()` gain `m` and `icc` for clustered data.
+- Fixed several sample-size searches and the tolerance factor for very small `n`.
+
+## Method comparison regression
+
+- `joint_test()` and `plot_joint()` gain `method`. For Deming fits the default is Sadler's (2010) sum-of-squares F test and its exact region. The jackknife Wald ellipse (`method = "wald"`) rejected a true identity line about 8.5% of the time at n = 10 and 7.4% at n = 20 with the F reference (`test_method = "F"`, its default), and 14% and 10% with the chi-squared reference that 0.3.0 used (nominal 5%); Sadler's test held 4.3-5.9% (`references/general/eiv_sims`). Passing-Bablok fits use the Wald test; Dufey (2020) fits are refused (8-11%).
+- `deming_power_sim()` now uses `joint_test()` (new `joint_method`), so its power matches the test users run; it previously overstated joint power. `deming_sample_size(use_joint = )` now takes effect.
+- `pb_reg()`:
+  - pairs bootstrap replaces a wild bootstrap that gave standard errors 4-5 times too small;
+  - new `se_method` (`"bootstrap"`, `"jackknife"`, `"dufey"`);
+  - `error.ratio != 1` is now an error (it biased the slope in simulations; use `dem_reg()`);
+  - `id` averages replicates and now works with missing values;
+  - fixed tie-corrected slope intervals and `reject_h0` on tied data.
+- `plot_joint()` takes `ideal_intercept` before `ideal_slope`, like `joint_test()`, and both default to the model's confidence level.
+- The documentation of `dem_reg(error.ratio)` now correctly states var(x)/var(y), as computed (thanks to Hugo Lachuer).
+
+
 # SimplyAgree 0.3.0
 
-- Add ehanced support for Deming regression.
-  - New function `deming_reli` for reliability analysis using Deming regression.
+- Add enhanced support for Deming regression.
   - Updated `dem_reg` function to include options for confidence intervals and plotting.
 - Added more power and sample size determination functions for limits of agreement.
 - Added Passing-Bablok regression function (`pb_reg`) for method comparison studies.
@@ -58,7 +130,7 @@
 - Added agreement coefficient function (`agree_coef`).
 - Added `loa_lme` function
   - `loa_mixed` now deprecated
-  - `loa_lme` allows for heterogenous variance by condition
+  - `loa_lme` allows for heterogeneous variance by condition
   - New function is faster and relies on parametric bootstrap
 - Assumptions checks are added for all "simple-agree" class results
   - Checks include: normality, heteroscedasticity, and proportional bias

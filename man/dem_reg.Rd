@@ -36,14 +36,17 @@ dem_reg(
 
 \item{weights}{an optional vector of weights to be used in the fitting process. Should be NULL or a numeric vector.}
 
-\item{error.ratio}{Ratio of the two error variances. Default is 1. This argument is ignored if subject identifiers are provided.}
+\item{error.ratio}{Ratio of the measurement error variance of x to that of y, i.e., var(x)/var(y),
+where var() denotes the error (not total) variance of each method. Default is 1 (equal error variances).
+Values greater than 1 indicate that x is measured with more error than y.
+This argument is ignored if subject identifiers are provided.}
 
 \item{model}{Logical. If TRUE (default), the model frame is stored in the returned object.
 This is needed for methods like \code{plot()}, \code{fitted()}, \code{residuals()}, and \code{predict()} to work
 without supplying \code{data}. If FALSE, the model frame is not stored (saves memory for large datasets),
 but these methods will require a \code{data} argument.}
 
-\item{keep_data}{Logical indicator (TRUE/FALSE). If TRUE, the jacknife samples are returned; default is FALSE.}
+\item{keep_data}{Logical indicator (TRUE/FALSE). If TRUE, the jackknife samples are returned; default is FALSE.}
 
 \item{...}{Additional arguments (currently unused).}
 }
@@ -68,7 +71,7 @@ The function returns a simple_eiv (eiv meaning "error in variables") object with
 \item \code{weighted}: Whether weighted regression was used.
 \item \code{weights}: Weights used in fitting.
 \item \code{conf.level}: Confidence level used.
-\item \code{resamples}: List containing resamples from jacknife procedure (if keep_data = TRUE).
+\item \code{resamples}: List containing resamples from jackknife procedure (if keep_data = TRUE).
 }
 }
 \description{
@@ -88,7 +91,9 @@ The weights can be provided by the user or can be calculated within function.
 If the data are measured in replicates, then the measurement error can be directly derived from the data.
 This can be accomplished by indicating the subject identifier with the id argument.
 When the replicates are not available in the data,
-then the ratio of error variances (y/x) can be provided with the error.ratio argument.
+then the ratio of error variances, var(x)/var(y), can be provided with the error.ratio argument.
+When subject identifiers are provided, the error ratio is instead estimated from the replicates
+as the within-subject variance of x divided by the within-subject variance of y.
 }
 \section{Interface Change}{
 
@@ -100,13 +105,24 @@ The \code{x} and \code{y} arguments are deprecated. Please use the \code{formula
 }
 
 \examples{
-\dontrun{
-# New formula interface (recommended)
-model <- dem_reg(y ~ x, data = mydata)
+# Peak flow: mini vs Wright meter (Bland & Altman, 1986)
+data("ba1986")
+fit <- dem_reg(mini1 ~ wright1, data = ba1986)
+summary(fit)
+plot(fit)
 
-# Old interface (still works with deprecation warning)
-model <- dem_reg(x = "x", y = "y", data = mydata)
-}
+# Joint test of intercept = 0 and slope = 1
+joint_test(fit)
+
+# Known error ratio, var(x) / var(y)
+dem_reg(mini1 ~ wright1, data = ba1986, error.ratio = 2)
+
+# Replicate measurements: the error ratio is estimated from the replicates
+data("reps")
+dem_reg(y ~ x, data = reps, id = "id")
+
+# Weighted Deming regression (error proportional to the level)
+dem_reg(mini1 ~ wright1, data = ba1986, weighted = TRUE)
 
 }
 \references{

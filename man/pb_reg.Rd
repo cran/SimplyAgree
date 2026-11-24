@@ -13,6 +13,7 @@ pb_reg(
   weights = NULL,
   error.ratio = 1,
   replicates = 0,
+  se_method = c("bootstrap", "jackknife", "dufey"),
   model = TRUE,
   keep_data = TRUE,
   ...
@@ -23,8 +24,8 @@ pb_reg(
 
 \item{data}{Data frame with all data.}
 
-\item{id}{Column with subject identifier (optional). If provided, measurement error
-ratio is calculated from replicate measurements.}
+\item{id}{Column with subject identifier (optional). If provided, replicate
+measurements are averaged within each subject before fitting.}
 
 \item{method}{Method for Passing-Bablok estimation. Options are:
 \itemize{
@@ -38,12 +39,29 @@ ratio is calculated from replicate measurements.}
 \item{weights}{An optional vector of case weights to be used in the fitting process.
 Should be NULL or a numeric vector.}
 
-\item{error.ratio}{Ratio of measurement error variances (var(x)/var(y)). Default is 1.
-This argument is ignored if subject identifiers are provided via \code{id}.}
+\item{error.ratio}{Must be 1 (the default). Values other than 1 are no longer
+supported and give an error; see "Measurement Error" in Details. Use
+\code{\link[=dem_reg]{dem_reg()}} when the error variances of x and y differ.}
 
-\item{replicates}{Number of bootstrap iterations for confidence intervals. If 0 (default),
-analytical confidence intervals are used. Bootstrap is recommended for weighted
-data and 'invariant' or 'scissors' methods.}
+\item{replicates}{Number of resamples for confidence intervals and the
+variance-covariance matrix. For \code{se_method = "bootstrap"} this is the number of
+bootstrap resamples; for \code{se_method = "jackknife"} it is the number of random
+delete-d subsets. If 0 (default), analytical confidence intervals are used and no
+variance-covariance matrix is returned (unless \code{se_method = "dufey"}). Resampling
+is recommended for weighted data and 'invariant' or 'scissors' methods.}
+
+\item{se_method}{Method used to estimate the variance-covariance matrix and
+confidence intervals of the coefficients. Options are:
+\itemize{
+\item "bootstrap": Nonparametric pairs (case) bootstrap with percentile
+confidence intervals (default). Used when \code{replicates > 0}.
+\item "jackknife": Delete-d jackknife with d = floor(n/2), using \code{replicates}
+random subsets (Shao & Wu, 1989). Used when \code{replicates > 0}.
+\item "dufey": \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} Analytic sandwich
+estimator of Dufey (2020). Does not require resampling (\code{replicates} is
+ignored). Only available for the "scissors" method without case weights.
+Not used by \code{\link[=joint_test]{joint_test()}} or \code{\link[=plot_joint]{plot_joint()}} (see Details).
+}}
 
 \item{model}{Logical. If TRUE (default), the model frame is stored in the returned object.
 This is needed for methods like \code{plot()}, \code{fitted()}, \code{residuals()}, and \code{predict()} to work
@@ -62,7 +80,8 @@ The function returns a simple_eiv object with the following components:
 \item \code{residuals}: Residuals from the fitted model.
 \item \code{fitted.values}: Predicted Y values.
 \item \code{model_table}: Data frame presenting the full results from the Passing-Bablok regression.
-\item \code{vcov}: Variance-covariance matrix for slope and intercept (if bootstrap used).
+\item \code{vcov}: Variance-covariance matrix for slope and intercept (if resampling
+or \code{se_method = "dufey"} is used; otherwise NULL).
 \item \code{df.residual}: Residual degrees of freedom.
 \item \code{call}: The matched call.
 \item \code{terms}: The terms object used.
@@ -70,14 +89,17 @@ The function returns a simple_eiv object with the following components:
 \item \code{x_vals}: Original x values used in fitting.
 \item \code{y_vals}: Original y values used in fitting.
 \item \code{weights}: Case weights (if provided).
-\item \code{error.ratio}: Error ratio used in fitting.
+\item \code{error.ratio}: Always 1 (kept for compatibility).
 \item \code{conf.level}: Confidence level used.
 \item \code{method}: Character string describing the method.
 \item \code{method_num}: Numeric method identifier (1, 2, or 3).
 \item \code{kendall_test}: Results of Kendall's tau correlation test.
 \item \code{cusum_test}: Results of CUSUM linearity test.
 \item \code{n_slopes}: Number of slopes used in estimation.
-\item \code{boot}: Bootstrap results (if replicates > 0).
+\item \code{boot}: Resampling results (if replicates > 0 and \code{se_method} is
+"bootstrap" or "jackknife").
+\item \code{se_method}: Method actually used for standard errors ("analytic",
+"bootstrap", "jackknife", or "dufey").
 }
 }
 \description{
@@ -112,35 +134,63 @@ Uses the line y = -x as the reference for partitioning points.
 of slopes below the horizontal, then uses this as the reference line.
 }
 
-\subsection{Measurement Error Handling}{
+\subsection{Measurement Error}{
 
-If the data are measured in replicates, then the measurement error ratio can be
-directly derived from the data. This can be accomplished by indicating the subject
-identifier with the \code{id} argument. When replicates are not available in the data,
-then the ratio of error variances (var(x)/var(y)) can be provided with the
-\code{error.ratio} argument (default = 1, indicating equal measurement errors).
+Passing-Bablok regression implicitly assumes that the ratio of the error
+variances of y and x equals the squared slope (equal error variances when
+the slope is 1). Earlier versions accepted \code{error.ratio != 1} (or estimated
+it from replicates via \code{id}) and weighted the pairwise slopes by it. In
+simulations this biased the slope (by -0.07 to -0.43 with an error ratio of
+4), the bias did not shrink with sample size, and joint tests then rejected a
+true identity line 81-100\% of the time with n >= 50. \code{error.ratio != 1} is
+therefore an error. When the error variances differ, use \code{\link[=dem_reg]{dem_reg()}} with
+the appropriate \code{error.ratio} (or \code{id}).
 
-The error ratio affects how pairwise slopes are weighted in the robust median
-calculation. When error.ratio = 1, all pairs receive equal weight. When
-error.ratio != 1, pairs are weighted to account for heterogeneous measurement
-precision.
+With \code{id}, replicate measurements are averaged within each subject and the
+subject means are analyzed.
 }
 
 \subsection{Weighting}{
 
-Case weights can be provided via the \code{weights} argument. These are distinct from
-measurement error weighting (controlled by \code{error.ratio}). Case weights allow
+Case weights can be provided via the \code{weights} argument. Case weights allow
 you to down-weight or up-weight specific observations in the analysis.
 }
 
-\subsection{Bootstrap}{
+\subsection{Standard Errors and Variance-Covariance Matrix}{
 
-Wild bootstrap resampling is used when \code{replicates > 0}. This is particularly
-useful for:
+The analytical (Passing & Bablok, 1983) confidence intervals do not provide a
+covariance between the intercept and slope, so a variance-covariance matrix
+(needed by \code{\link[=joint_test]{joint_test()}} and \code{\link[=plot_joint]{plot_joint()}}) is only returned when one of the
+following is used:
 \itemize{
-\item Weighted regression (case weights or error.ratio != 1)
+\item \strong{Pairs bootstrap} (\code{se_method = "bootstrap"}, \code{replicates > 0}): whole
+(x, y) observations are resampled with replacement and the model is refit.
+The variance-covariance matrix is the covariance of the bootstrap estimates
+and the confidence intervals are percentile intervals.
+\item \strong{Delete-d jackknife} (\code{se_method = "jackknife"}, \code{replicates > 0}): the
+model is refit on \code{replicates} random subsets that each leave out
+d = floor(n/2) observations. The delete-1 jackknife is inconsistent for
+median-type estimators such as Passing-Bablok; deleting d observations with
+\eqn{\sqrt{n}/d \to 0} restores consistency (Shao & Wu, 1989). Confidence
+intervals are Wald-type intervals using a t(n-2) quantile.
+\item \strong{Dufey (2020)} (\code{se_method = "dufey"}): an analytic, distribution-free
+estimator for the equivariant ("scissors") Passing-Bablok estimator, based on
+the U-statistic variance of Kendall's tau and a sandwich estimator for the
+intercept. The slope interval is formed from order statistics of the pairwise
+slopes and the intercept interval is Wald-type. \strong{This option is
+experimental.} In simulations its marginal intervals had close to nominal
+coverage for n >= 20, but a joint test of intercept and slope built from
+its variance-covariance matrix rejected a true null hypothesis 8-11\% of the
+time at a nominal 5\%. \code{\link[=joint_test]{joint_test()}} and \code{\link[=plot_joint]{plot_joint()}} therefore refuse
+Dufey fits; use the pairs bootstrap or delete-d jackknife, which held
+4.3-5.4\% in the same simulations.
+}
+
+Resampling is particularly useful for:
+\itemize{
+\item Weighted regression (case weights)
 \item Methods 'invariant' and 'scissors' (where analytical CI validity is uncertain)
-\item Small sample sizes
+\item Joint tests of intercept and slope
 }
 
 The method automatically:
@@ -152,47 +202,56 @@ The method automatically:
 }
 }
 \examples{
-\dontrun{
-# Basic Passing-Bablok regression (scissors method, default)
-model <- pb_reg(method2 ~ method1, data = mydata)
+# Peak flow: mini vs Wright meter (Bland & Altman, 1986)
+data("ba1986")
 
-# With known error ratio
-model_er <- pb_reg(method2 ~ method1, data = mydata, error.ratio = 2)
+# Analytic confidence intervals (scissors method, default)
+fit <- pb_reg(mini1 ~ wright1, data = ba1986)
+summary(fit)
+plot(fit)
 
-# With replicate measurements
-model_rep <- pb_reg(method2 ~ method1, data = mydata, id = "subject_id")
+# Symmetric and scale-invariant methods
+pb_reg(mini1 ~ wright1, data = ba1986, method = "symmetric")
+pb_reg(mini1 ~ wright1, data = ba1986, method = "invariant")
 
-# With bootstrap confidence intervals
-model_boot <- pb_reg(method2 ~ method1, data = mydata,
-                     error.ratio = 1.5, replicates = 1000)
+\donttest{
+# Bootstrap (or delete-d jackknife) variance-covariance matrix, needed for
+# the joint test of intercept and slope; use more replicates in practice
+fit_boot <- pb_reg(mini1 ~ wright1, data = ba1986, replicates = 199)
+joint_test(fit_boot)
+plot_joint(fit_boot)
 
-# Symmetric method
-model_sym <- pb_reg(method2 ~ method1, data = mydata, method = "symmetric")
+fit_jack <- pb_reg(mini1 ~ wright1, data = ba1986,
+                   se_method = "jackknife", replicates = 199)
 
-# Scale-invariant method
-model_inv <- pb_reg(method2 ~ method1, data = mydata, method = "invariant")
-
-# With case weights
-model_wt <- pb_reg(method2 ~ method1, data = mydata,
-                   weights = mydata$case_weights)
-
-# View results
-print(model)
-summary(model)
-plot(model)
+# Case weights
+w <- rep(1, nrow(ba1986))
+w[1:3] <- 2
+pb_reg(mini1 ~ wright1, data = ba1986, weights = w, replicates = 199)
 }
 
 }
 \references{
-Passing, H. and Bablok, W. (1983). A new biometrical procedure for testing the
-equality of measurements from two different analytical methods. Journal of
-Clinical Chemistry and Clinical Biochemistry, 21, 709-720.
+Passing, H., & Bablok, W. (1983). A New Biometrical Procedure for Testing the Equality of Measurements from Two Different Analytical Methods. Application of linear regression procedures for method comparison studies in Clinical Chemistry,
+Part I. Cclm, 21(11), 709-720. doi: 10.1515/cclm.1983.21.11.709
 
-Passing, H. and Bablok, W. (1984). Comparison of several regression procedures
-for method comparison studies and determination of sample sizes. Journal of
-Clinical Chemistry and Clinical Biochemistry, 22, 431-445.
+Passing, H., & Bablok, W. (1984). Comparison of Several Regression Procedures for Method Comparison Studies and Determination of Sample Sizes Application of linear regression procedures for method comparison studies in Clinical Chemistry, Part II.
+Clinical Chemistry and Laboratory Medicine,
+22(6). doi: 10.1515/cclm.1984.22.6.431
 
-Bablok, W., Passing, H., Bender, R. and Schneider, B. (1988). A general
-regression procedure for method transformation. Journal of Clinical Chemistry
-and Clinical Biochemistry, 26, 783-790.
+Bablok, W., Passing, H., Bender, R., & Schneider, B. (1988). A General Regression Procedure for Method Transformation. Application of Linear Regression Procedures for Method Comparison Studies in Clinical Chemistry, Part III.
+Clinical Chemistry and Laboratory Medicine,
+26(11). doi: 10.1515/cclm.1988.26.11.783
+
+Dufey, F. (2020). Derivation of Passing-Bablok regression from Kendall's tau.
+The International Journal of Biostatistics, 16(2), 20190157.
+doi: 10.1515/ijb-2019-0157
+
+Sen, P. K. (1968). Estimates of the regression coefficient based on
+Kendall's tau. Journal of the American Statistical Association, 63(324),
+1379-1389. doi: 10.1080/01621459.1968.10480934
+
+Shao, J., & Wu, C. F. J. (1989). A general theory for jackknife variance
+estimation. The Annals of Statistics, 17(3), 1176-1197.
+doi: 10.1214/aos/1176347263
 }

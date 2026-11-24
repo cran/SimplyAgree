@@ -1,7 +1,7 @@
 Package: SimplyAgree
 Type: Package
 Title: Flexible and Robust Agreement and Reliability Analyses
-Version: 0.3.0
+Version: 0.4.1
 Authors@R: person("Aaron", "Caldwell", email = "arcaldwell49@gmail.com",
                   role = c("aut", "cre"))
 Maintainer: Aaron Caldwell <arcaldwell49@gmail.com>
@@ -10,17 +10,18 @@ URL: https://aaroncaldwell.us/SimplyAgree/
 BugReports: https://github.com/arcaldwell49/SimplyAgree/issues
 License: GPL (>= 3)
 Encoding: UTF-8
+Language: en-US
 LazyData: true
-RoxygenNote: 7.3.2
-Imports: ggplot2, emmeans, lme4, boot, stats, dplyr, magrittr,
+RoxygenNote: 7.3.3
+Imports: ggplot2, emmeans, lme4, minqa, boot, stats, dplyr, magrittr,
         tidyselect, tidyr, stringr, jmvcore, quantreg, patchwork,
-        insight, nlme, purrr, Matrix, MASS, lifecycle, scales
+        insight, nlme, purrr, lifecycle, scales
 Suggests: knitr, rmarkdown, testthat, readr, covr, mgcv, ggeffects,
-        deming, pbkrtest
+        deming, pbkrtest, ordinal
 VignetteBuilder: knitr
 Depends: R (>= 3.6)
 NeedsCompilation: no
-Packaged: 2026-01-21 19:41:05 UTC; CaldwellAaron
+Packaged: 2026-11-24 20:28:56 UTC; aaroncaldwell
 Author: Aaron Caldwell [aut, cre]
 Repository: CRAN
-Date/Publication: 2026-01-21 20:10:20 UTC
+Date/Publication: 2026-11-24 21:00:02 UTC

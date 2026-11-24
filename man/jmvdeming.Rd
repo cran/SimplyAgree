@@ -27,17 +27,18 @@ jmvdeming(
 \item{ciWidth}{a number between 50 and 99.9 (default: 95), the width of
 confidence intervals}
 
-\item{testValue}{Ratio of the two error variances. Default is 1.}
+\item{testValue}{Ratio of the error variances, Method 1 (x) / Method 2 (y).
+Default is 1.}
 
 \item{plotcon}{\code{TRUE} or \code{FALSE} (default), for Bland-Altman plot}
 
 \item{plotcheck}{\code{TRUE} or \code{FALSE} (default), assumptions plots}
 
-\item{weighted}{\code{TRUE} or \code{FALSE} (default), use weighted Deming regression}
+\item{weighted}{\code{TRUE} or \code{FALSE}}
 
-\item{xlabel}{The label for the x-axis (default: "Method: 1")}
+\item{xlabel}{The label for the x-axis}
 
-\item{ylabel}{The label for the y-axis (default: "Method: 2")}
+\item{ylabel}{The label for the y-axis}
 }
 \value{
 A results object containing:

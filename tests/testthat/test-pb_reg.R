@@ -260,10 +260,14 @@ test_that("pb_reg default error.ratio is 1", {
   expect_equal(result$error.ratio, 1)
 })
 
-test_that("pb_reg warns about non-unit error.ratio", {
-  expect_warning(
+test_that("pb_reg errors on non-unit error.ratio", {
+  expect_error(
     pb_reg(Method2 ~ Method1, data = ncss_pb1, error.ratio = 2),
-    regexp = "error.ratio"
+    regexp = "supports only error.ratio = 1"
+  )
+  expect_error(
+    pb_reg(Method2 ~ Method1, data = ncss_pb1, error.ratio = c(1, 1)),
+    regexp = "supports only error.ratio = 1"
   )
 })
 
@@ -287,7 +291,11 @@ test_that("pb_reg works with replicate data", {
                    replicates = 99)
 
   expect_s3_class(result, "simple_eiv")
-  expect_true(is.numeric(result$error.ratio))
+  # Replicates are averaged; the error ratio is not estimated or used
+  expect_equal(result$error.ratio, 1)
+  expect_equal(nrow(result$model), 15)
+  means <- aggregate(cbind(x, y) ~ id, data = rep_data, FUN = mean)
+  expect_equal(sort(result$model$x), sort(means$x))
 })
 
 
@@ -568,10 +576,15 @@ test_that("pb_reg handles id as vector directly",
 
             # Pass id as a vector directly (not column name)
             id_vector <- rep_data$subject
-            result <- pb_reg(y ~ x, data = rep_data, id = id_vector)
-
-
+            # pb_reg() advises bootstrap intervals for this design: keep the
+            # result without the advisory warnings, then check they are given
+            result <- suppressWarnings(pb_reg(y ~ x, data = rep_data,
+                                              id = id_vector))
             expect_s3_class(result, "simple_eiv")
+
+            expect_warning(pb_reg(y ~ x, data = rep_data, id = id_vector),
+                           "'invariant' and 'scissors' methods",
+                           fixed = TRUE)
           })
 
 # Weights with replicate data warning - Lines 286-287 -----------
@@ -636,10 +649,11 @@ test_that("pb_reg errors when no valid slopes can be computed", {
 })
 
 # Weighted median in method 2 (invariant) - Line 533 -----------
-test_that("pb_reg uses weighted median in invariant method with error.ratio", {
+test_that("pb_reg uses weighted median in invariant method with case weights", {
+  wts <- rep(1, nrow(test_data)); wts[1:5] <- 2
   result <- pb_reg(method2 ~ method1, data = test_data,
                    method = "invariant",
-                   error.ratio = 2,
+                   weights = wts,
                    replicates = 100)
 
   expect_s3_class(result, "simple_eiv")
@@ -672,8 +686,8 @@ test_that("pb_reg computes weighted intercept with case weights", {
   expect_false(is.null(result$weights))
 })
 
-# dx near zero in pair weights - Lines 454-455 -----------
-test_that("pb_reg handles near-zero dx in pair weights",
+# dx near zero -----------
+test_that("pb_reg handles near-zero dx",
           {
             # Data with some very close x values
             close_data <- data.frame(
@@ -681,7 +695,8 @@ test_that("pb_reg handles near-zero dx in pair weights",
               y = c(1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9)
             )
 
-            result <- pb_reg(y ~ x, data = close_data, error.ratio = 2, replicates = 50)
+            result <- suppressWarnings(pb_reg(y ~ x, data = close_data,
+                                              replicates = 50))
             expect_s3_class(result, "simple_eiv")
           })
 
@@ -759,7 +774,6 @@ test_that("pb_reg handles case with no pair_weights and no case_weights", {
     x, y,
     method = 3,
     conf.level = 0.95,
-    pair_weights = NULL,
     case_weights = NULL
   )
 
@@ -780,4 +794,221 @@ test_that("pb_reg messages when correlation not significant", {
     suppressWarnings({pb_reg(y ~ x, data = uncorr_data)}),
     "Kendall's tau is not significantly positive. Passing-Bablok regression requires positive correlation."
   )
+})
+
+
+# Standard error methods (se_method) ---------------
+
+test_that("pb_reg pairs bootstrap returns vcov from bootstrap estimates", {
+  set.seed(8812)
+  result <- pb_reg(Method2 ~ Method1, data = ncss_pb1, replicates = 199)
+
+  expect_equal(result$se_method, "bootstrap")
+  expect_equal(result$boot$type, "bootstrap")
+  expect_equal(nrow(result$boot$t), 199)
+  expect_equal(unname(result$vcov), unname(var(result$boot$t)))
+  expect_equal(result$model_table$se, unname(sqrt(diag(result$vcov))))
+  expect_equal(unname(result$model_table$lower.ci[2]),
+               unname(quantile(result$boot$t[, 2], 0.025)))
+})
+
+test_that("pb_reg pairs bootstrap SE is on the scale of the sampling SD", {
+  # Regression test for the old wild bootstrap, whose resamples never crossed
+  # the fitted line and gave slope SEs ~4-5x too small.
+  set.seed(31)
+  n <- 40
+  true_x <- rnorm(n, 50, 10)
+  dat <- data.frame(x = true_x + rnorm(n, 0, 2), y = true_x + rnorm(n, 0, 2))
+
+  boot_fit <- pb_reg(y ~ x, data = dat, replicates = 499)
+  dufey_fit <- pb_reg(y ~ x, data = dat, se_method = "dufey")
+
+  ratio <- sqrt(boot_fit$vcov[2, 2] / dufey_fit$vcov[2, 2])
+  expect_gt(ratio, 0.5)
+  expect_lt(ratio, 2)
+})
+
+test_that("pb_reg delete-d jackknife uses d = floor(n/2)", {
+  set.seed(4410)
+  result <- pb_reg(Method2 ~ Method1, data = ncss_pb1, replicates = 199,
+                   se_method = "jackknife")
+  n <- nrow(ncss_pb1)
+  d <- floor(n / 2)
+  th <- result$boot$t
+
+  expect_equal(result$se_method, "jackknife")
+  expect_equal(result$boot$d, d)
+  expect_equal(unname(result$vcov),
+               unname((n - d) / (d * nrow(th)) * crossprod(sweep(th, 2, colMeans(th)))))
+  t_crit <- qt(0.975, n - 2)
+  expect_equal(result$model_table$lower.ci,
+               unname(result$coefficients - t_crit * sqrt(diag(result$vcov))))
+})
+
+test_that("pb_reg Dufey vcov matches reference values", {
+  result <- pb_reg(Method2 ~ Method1, data = ncss_pb1, se_method = "dufey")
+
+  expect_equal(result$se_method, "dufey")
+  expect_equal(result$replicates, 0)
+  expect_null(result$boot)
+  expect_equal(unname(c(result$vcov)),
+               c(0.144582772587365, -0.00209587570878944,
+                 -0.00209587570878944, 3.87627340049026e-05),
+               tolerance = 1e-6)
+  expect_equal(c(result$model_table$lower.ci, result$model_table$upper.ci),
+               c(-0.928887180036696, 0.987271961628377,
+                 0.628887180036713, 1.01277861483846),
+               tolerance = 1e-6)
+})
+
+test_that("pb_reg Dufey vcov is invariant to the sign of the association", {
+  dat <- data.frame(x = ncss_pb1$Method1, y = -ncss_pb1$Method2)
+  pos <- pb_reg(Method2 ~ Method1, data = ncss_pb1, se_method = "dufey")
+  neg <- suppressMessages(pb_reg(y ~ x, data = dat, se_method = "dufey"))
+
+  expect_equal(unname(neg$vcov), unname(pos$vcov), tolerance = 1e-8)
+})
+
+test_that("pb_reg Dufey ignores replicates and needs no bootstrap warning", {
+  expect_no_warning(
+    result <- pb_reg(Method2 ~ Method1, data = ncss_pb1, se_method = "dufey",
+                     replicates = 99)
+  )
+  expect_equal(result$replicates, 0)
+})
+
+test_that("pb_reg Dufey is restricted to unweighted scissors fits", {
+  expect_error(pb_reg(Method2 ~ Method1, data = ncss_pb1, se_method = "dufey",
+                      method = "symmetric"), "scissors")
+  wts <- rep(1, nrow(ncss_pb1)); wts[1] <- 2
+  expect_error(pb_reg(Method2 ~ Method1, data = ncss_pb1, se_method = "dufey",
+                      weights = wts), "weights")
+})
+
+test_that("pb_reg analytic fit returns no vcov", {
+  result <- suppressWarnings(pb_reg(Method2 ~ Method1, data = ncss_pb1))
+  expect_equal(result$se_method, "analytic")
+  expect_null(result$vcov)
+})
+
+test_that("pb_reg resampling works with case weights", {
+  set.seed(77)
+  wts <- rep(1, nrow(ncss_pb1)); wts[1:5] <- 2
+  for (sm in c("bootstrap", "jackknife")) {
+    result <- pb_reg(Method2 ~ Method1, data = ncss_pb1, replicates = 25,
+                     weights = wts, se_method = sm)
+    expect_true(all(is.finite(result$vcov)))
+    expect_true(all(is.finite(result$model_table$lower.ci)))
+  }
+})
+
+test_that("joint_test works for every pb_reg se_method", {
+  set.seed(9)
+  fits <- list(
+    pb_reg(Method2 ~ Method1, data = ncss_pb1, replicates = 99),
+    pb_reg(Method2 ~ Method1, data = ncss_pb1, replicates = 99,
+           se_method = "jackknife")
+  )
+  for (f in fits) {
+    jt <- joint_test(f)
+    expect_s3_class(jt, "htest")
+    expect_match(jt$method, "Wald")
+    expect_true(jt$p.value > 0 && jt$p.value <= 1)
+  }
+})
+
+test_that("joint_test and plot_joint refuse Dufey fits", {
+  fit <- pb_reg(Method2 ~ Method1, data = ncss_pb1, se_method = "dufey")
+  expect_error(joint_test(fit), "Dufey")
+  expect_error(plot_joint(fit), "Dufey")
+})
+
+test_that("joint_test refuses PB fits with error.ratio != 1 from older versions", {
+  set.seed(9)
+  fit <- pb_reg(Method2 ~ Method1, data = ncss_pb1, replicates = 49)
+  fit$error.ratio <- 2
+  expect_error(joint_test(fit), "error.ratio != 1")
+})
+
+test_that("joint_test offers only the Wald test for PB fits", {
+  set.seed(9)
+  fit <- pb_reg(Method2 ~ Method1, data = ncss_pb1, replicates = 49)
+  expect_error(joint_test(fit, method = "sadler"), "only available for Deming")
+})
+
+
+# Analytic CI tie correction ---------------
+
+test_that("analytic slope CI applies the tie correction inside the sqrt", {
+  # Rounded data with many tied x values
+  set.seed(1968)
+  true_x <- runif(40, 20, 60)
+  x <- round(true_x + rnorm(40, 0, 1))
+  y <- true_x + rnorm(40, 0, 1)
+  expect_true(any(table(x) > 1))
+
+  fit <- SimplyAgree:::.passing_bablok_fit(x, y, method = 1, conf.level = 0.95)
+
+  n <- length(x)
+  t <- as.vector(table(x))
+  v <- sqrt((n * (n - 1) * (2 * n + 5) - sum(t * (t - 1) * (2 * t + 5))) / 18)
+  dist <- ceiling(v * qnorm(0.975) / 2)
+  th <- sort(fit$theta)
+  expected <- tan(approx(seq_along(th) - 0.5, th,
+                         xout = length(th) / 2 + c(-dist, dist))$y)
+
+  expect_equal(c(fit$slope_lower, fit$slope_upper), expected)
+})
+
+test_that("analytic slope CI without ties is unaffected by the tie correction", {
+  x <- ncss_pb1$Method1
+  y <- ncss_pb1$Method2
+  expect_true(all(table(x) == 1))
+
+  fit <- SimplyAgree:::.passing_bablok_fit(x, y, method = 1, conf.level = 0.95)
+
+  n <- length(x)
+  dist <- ceiling(sqrt(n * (n - 1) * (2 * n + 5) / 18) * qnorm(0.975) / 2)
+  th <- sort(fit$theta)
+  expected <- tan(approx(seq_along(th) - 0.5, th,
+                         xout = length(th) / 2 + c(-dist, dist))$y)
+
+  expect_equal(c(fit$slope_lower, fit$slope_upper), expected)
+})
+
+test_that("heavy ties in x do not produce a negative variance", {
+  x <- rep(c(10, 20, 30), each = 4)
+  y <- x + c(-0.3, -0.1, 0.1, 0.3)
+  fit <- SimplyAgree:::.passing_bablok_fit(x, y, method = 1, conf.level = 0.95)
+  expect_false(is.nan(fit$slope_lower))
+  expect_false(is.nan(fit$slope_upper))
+})
+
+test_that("reject_h0 is not triggered by floating-point error on tied data", {
+  # Coarsely rounded data put many pairwise slopes at exactly 1, so the CI can
+  # collapse to tan(pi/4) = 0.9999999999999999
+  set.seed(7)
+  tx <- runif(80, 20, 60)
+  d <- data.frame(x = round(tx + rnorm(80, 0, 1)), y = round(tx + rnorm(80, 0, 1)))
+  fit <- suppressWarnings(pb_reg(y ~ x, data = d, method = "symmetric"))
+  mt <- fit$model_table
+
+  expect_equal(mt$lower.ci[2], 1)
+  expect_equal(mt$upper.ci[2], 1)
+  expect_false(mt$reject_h0[2])
+  expect_false(mt$reject_h0[1])
+})
+
+test_that("pb_reg id works when x or y has missing values", {
+  d <- data.frame(id = rep(1:6, each = 3),
+                  x = c(1, 1.2, 0.9, 2, 2.1, 1.9, 3, 3.2, NA, 4, 4.1, 3.8,
+                        5, 5.2, 4.9, 6, 6.1, 5.8),
+                  y = c(1.1, 1, 1.2, 2.2, NA, 2, 3.1, 3, 3.2, 4.1, 3.9, 4,
+                        5.2, 5, 5.1, 6.1, 6, 6.2))
+  fit <- suppressWarnings(pb_reg(y ~ x, data = d, id = "id"))
+  cc <- d[complete.cases(d), ]
+  means <- aggregate(cbind(x, y) ~ id, data = cc, FUN = mean)
+  expect_equal(nrow(fit$model), 6)
+  expect_equal(fit$model$x, means$x)
+  expect_equal(fit$model$y, means$y)
 })

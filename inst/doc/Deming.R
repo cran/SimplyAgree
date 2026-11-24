@@ -3,6 +3,7 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+has_deming <- requireNamespace("deming", quietly = TRUE)
 
 ## -----------------------------------------------------------------------------
 library(SimplyAgree)
@@ -19,41 +20,41 @@ dem1 = dem_reg(y ~ x,
                weighted = FALSE)
 dem1
 
-## -----------------------------------------------------------------------------
+## ----fig.alt = "Scatter plot of y against x with the fitted Deming regression line and its confidence band."----
 plot(dem1, interval = "confidence")
 
-## -----------------------------------------------------------------------------
+## ----fig.alt = "Two diagnostic panels for the Deming regression: homogeneity of the residuals against fitted values, and normality of the residuals."----
 check(dem1)
 
-## -----------------------------------------------------------------------------
-library(deming)
-data('ferritin')
+## ----eval = has_deming--------------------------------------------------------
+# library(deming)
+# data('ferritin')
+# 
+# head(ferritin)
 
-head(ferritin)
+## ----eval = has_deming, fig.alt = c("Scatter plot of old.lot against new.lot ferritin values with the unweighted Deming regression line.", "Diagnostic panels for the unweighted Deming regression of the ferritin data: homogeneity and normality of the residuals.")----
+# dem2 = dem_reg(
+#   old.lot ~ new.lot,
+#   data = ferritin,
+#   weighted = FALSE
+# )
+# summary(dem2)
+# 
+# plot(dem2)
+# 
+# check(dem2)
 
-## -----------------------------------------------------------------------------
-dem2 = dem_reg(
-  old.lot ~ new.lot,
-  data = ferritin,
-  weighted = FALSE
-)
-summary(dem2)
-
-plot(dem2)
-
-check(dem2)
-
-## -----------------------------------------------------------------------------
-dem3 = dem_reg(
-  old.lot ~ new.lot,
-  data = ferritin,
-  weighted = TRUE
-)
-summary(dem3)
-
-plot(dem3)
-
-check(dem3)
+## ----eval = has_deming, fig.alt = c("Scatter plot of old.lot against new.lot ferritin values with the weighted Deming regression line.", "Diagnostic panels for the weighted Deming regression of the ferritin data: homogeneity and normality of the residuals.")----
+# dem3 = dem_reg(
+#   old.lot ~ new.lot,
+#   data = ferritin,
+#   weighted = TRUE
+# )
+# summary(dem3)
+# 
+# plot(dem3)
+# 
+# check(dem3)
 
 ## -----------------------------------------------------------------------------
 # Create example data
@@ -73,10 +74,10 @@ pb1
 ## -----------------------------------------------------------------------------
 summary(pb1)
 
-## -----------------------------------------------------------------------------
+## ----fig.alt = "Scatter plot of method2 against method1 with the fitted Passing-Bablok regression line."----
 plot(pb1)
 
-## -----------------------------------------------------------------------------
+## ----fig.alt = "Four Passing-Bablok diagnostic panels: monotonic relationship, ranked residuals, CUSUM linearity test, and the distribution of pairwise slopes."----
 check(pb1)
 
 ## -----------------------------------------------------------------------------
@@ -85,13 +86,13 @@ pb2 <- pb_reg(method2 ~ method1,
               replicates = 999)
 summary(pb2)
 
-## -----------------------------------------------------------------------------
+## ----fig.alt = "Joint confidence region for the Deming intercept and slope as a red curve, the separate confidence intervals as a blue rectangle, the estimate as a black dot, and the ideal point of intercept 0 and slope 1 marked with an X."----
 plot_joint(dem1, 
            ideal_slope = 1, 
            ideal_intercept = 0,
            show_intervals = TRUE)
 
-## -----------------------------------------------------------------------------
+## ----fig.alt = "Joint confidence ellipse for the Passing-Bablok intercept and slope, with the estimate and the ideal point of intercept 0 and slope 1 marked."----
 plot_joint(pb2)
 
 ## -----------------------------------------------------------------------------

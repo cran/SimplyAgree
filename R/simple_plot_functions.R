@@ -176,18 +176,17 @@ simple_ba_plot = function(x,
       stop("Only lm, loess, and gam are supported as smooth_method at this time.")
     }
     if(smooth_method == "gam"){
-      if (requireNamespace(c("mgcv","ggeffects"), quietly = TRUE)) {
+      if(!(as.character(x$call[1]) %in% c("agree_test", "agree_np",
+                                          "SimplyAgree::agree_test", "SimplyAgree::agree_np"))){
+        stop("gam is not supported for agree_reps or agree_nest at this time")
+        #gam1 = mgcv::gam(data = df,
+        #                 delta ~ s(mean, bs = "tp") + s(id, bs="re"))
+      }
+      if (requireNamespace("mgcv", quietly = TRUE) &&
+          requireNamespace("ggeffects", quietly = TRUE)) {
 
-        if(as.character(x$call[1]) %in% c("agree_test", "agree_np",
-                                          "SimplyAgree::agree_test", "SimplyAgree::agree_np") ){
-          gam1 = mgcv::gam(data = df,
-                           delta ~ s(mean))
-        } else {
-
-          stop("gam is not supported for agree_reps or agree_nest at this time")
-          #gam1 = mgcv::gam(data = df,
-          #                 delta ~ s(mean, bs = "tp") + s(id, bs="re"))
-        }
+        gam1 = mgcv::gam(data = df,
+                         delta ~ s(mean))
 
         df2 = data.frame(mean = seq(min(df$mean, na.rm=TRUE),
                                         max(df$mean, na.rm=TRUE),
@@ -287,14 +286,18 @@ bias_ba_plot = function(x,
   delta = get_call(x$call$delta)
 
   if(as.character(x$call[1]) == "agree_np" | as.character(x$call[1]) == "SimplyAgree::agree_np"){
-    quan_mod = rq(formula =  delta ~ mean,
-                  data = df,
-                  tau = c(agree.u,.5,agree.l))
+    # the fitted model (delta ~ 1 unless prop_bias) and its bootstrap
+    # covariance, so the bands are the printed limits and bounds
+    quan_mod = x$qr_mod
+    conf2 = if (isTRUE(get_call(x$call$TOST))) 1 - (1 - conf.level) * 2 else
+      conf.level
     emm = get_qemm(quan_mod,
                    df,
                    agree.l,
                    agree.u,
-                   conf.level)
+                   conf.level,
+                   conf2 = conf2,
+                   V = x$qr_vcov)
 
     if(geom == "geom_point"){
       bland_alt.plot = ggplot(df,

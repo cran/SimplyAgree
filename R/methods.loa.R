@@ -12,7 +12,7 @@
 #' \describe{
 #'   \item{\code{print}}{Prints short summary of the Limits of Agreement.}
 #'   \item{\code{plot}}{Returns a plot of the limits of agreement.}
-#'   \item{\code{check}}{Returns plots testing the assumptions of a Bland-Altman analysis. P-values for the normality and heteroskedascity tests are provided as captions to the plot.}
+#'   \item{\code{check}}{Returns plots testing the assumptions of a Bland-Altman analysis. P-values for the normality and heteroskedasticity tests are provided as captions to the plot.}
 #' }
 #'
 #' @name loa-methods
@@ -112,11 +112,27 @@ print.loa <- function(x,
       title1 = paste0(title1, " of the Sympercent Difference (s%)")
     }
   }
+  # objects created before bound_type existed used IU bounds
+  bound_type = if(is.null(x$call$bound_type)) "iu" else x$call$bound_type
   subtitle1 = paste0(
     x$call$agree.level*100,
     "% LoA @ ",
     x$call$alpha*100,
     "% Alpha-Level"
+  )
+  bound_note = switch(
+    bound_type,
+    iu = paste0(
+      "LoA CI: one-sided ", (1 - x$call$alpha) * 100,
+      "% bounds (outer ends of ", (1 - 2 * x$call$alpha) * 100,
+      "% CIs) for an intersection-union test against a maximal allowable difference;",
+      "\n  not a joint ", (1 - x$call$alpha) * 100, "% interval for the LoA"
+    ),
+    joint = paste0(
+      "LoA CI: outer ends of ", (1 - x$call$alpha) * 100,
+      "% CIs; at least ", (1 - x$call$alpha) * 100,
+      "% joint confidence for both LoA"
+    )
   )
   dat_type = switch(
     call2$data_type,
@@ -151,15 +167,20 @@ print.loa <- function(x,
   cat("\n")
   print(pr_table3, digits = digits, row.names = FALSE)
   cat("\n")
+  cat(bound_note, sep = "")
+  cat("\n")
   cat(var_print, sep = "")
   cat("\n")
   if(call2$data_type == "reps"){
     var_print2 = paste0(
-      "Within-Subject Variances of X & Y = ",
-      round(x$loa$within_variance_x[1],digits=digits),
+      "Within-Subject SDs of X & Y = ",
+      round(sqrt(x$loa$within_variance_x[1]),digits=digits),
       " & ",
-      round(x$loa$within_variance_y[1],digits=digits)
+      round(sqrt(x$loa$within_variance_y[1]),digits=digits),
+      if(call2$log_tf) " (log scale)"
     )
+    cat(var_print2, sep = "")
+    cat("\n")
   }
 
 }
@@ -204,7 +225,23 @@ plot.loa <- function(x,
 #' @export
 
 check.loa <- function(x, ...) {
+  panels = .loa_check_panels(x)
+  wrap_plots(panels$p_norm, panels$p_het,
+             panels$p_bias, ncol = 2) & plot_annotation(
+               theme = theme(
+                 panel.background = element_rect(fill='transparent'), #transparent panel bg
+                 plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+                 panel.grid.major = element_blank(), #remove major gridlines
+                 panel.grid.minor = element_blank(), #remove minor gridlines
+                 legend.background = element_rect(fill='transparent'), #transparent legend bg
+                 legend.box.background = element_rect(fill='transparent') #transparent legend panel
+               ))
+}
 
+# The three diagnostic panels of check.loa() (normality, heteroskedasticity,
+# proportional bias), returned separately so other methods (ccc_test) can
+# reuse some of them.
+.loa_check_panels <- function(x) {
 
   call2 = x$call
   df = model.frame(x$call$lm_mod)
@@ -324,19 +361,7 @@ check.loa <- function(x, ...) {
       legend.box.background = element_rect(fill='transparent') #transparent legend panel
     )
 
-  #return(list(p_norm = p_norm,
-  #            p_het = p_het,
-  #            p_bias = p_bias))
-
-  wrap_plots(p_norm, p_het,
-             p_bias, ncol = 2) & plot_annotation(
-               theme = theme(
-                 panel.background = element_rect(fill='transparent'), #transparent panel bg
-                 plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
-                 panel.grid.major = element_blank(), #remove major gridlines
-                 panel.grid.minor = element_blank(), #remove minor gridlines
-                 legend.background = element_rect(fill='transparent'), #transparent legend bg
-                 legend.box.background = element_rect(fill='transparent') #transparent legend panel
-               ))
-
+  list(p_norm = p_norm,
+       p_het = p_het,
+       p_bias = p_bias)
 }

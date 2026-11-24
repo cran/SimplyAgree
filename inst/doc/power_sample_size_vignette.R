@@ -17,7 +17,9 @@ library(SimplyAgree)
 #   sigma = NULL,       # SD of differences
 #   p0_star = 0.95,    # Central proportion (tolerance coverage)
 #   power = NULL,       # Target power
-#   alpha = 0.05       # Significance level
+#   alpha = 0.05,      # Significance level
+#   m = 1,             # Paired measurements per subject
+#   icc = 0            # ICC of the differences (if m > 1)
 # )
 
 ## ----exact_ex1, eval=TRUE-----------------------------------------------------
@@ -33,16 +35,34 @@ result <- power_agreement_exact(
 print(result)
 
 ## ----bland_usage, eval=FALSE--------------------------------------------------
+# power_agreement_limit(
+#   n = NULL,                        # Sample size (pairs)
+#   delta = NULL,                    # Maximal allowable difference
+#   mu = 0,                          # Mean difference
+#   sigma = NULL,                    # SD of differences
+#   power = NULL,                    # Target power
+#   conf.level = 0.95,               # CI confidence level
+#   agree.level = 0.95,              # LOA agreement level
+#   m = 1,                           # Paired measurements per subject
+#   icc = 0                          # ICC of the differences (if m > 1)
+# )
+
+## ----bland_n, eval=TRUE-------------------------------------------------------
+power_agreement_limit(delta = 7, mu = 0.5, sigma = 2.5, power = 0.80)
+
+## ----bland_curve_usage, eval=FALSE--------------------------------------------
 # blandPowerCurve(
 #   samplesizes = seq(10, 100, 1),  # Range of sample sizes
 #   mu = 0,                          # Mean difference
 #   SD,                              # SD of differences
 #   delta,                           # Tolerance bound(s)
 #   conf.level = 0.95,              # CI confidence level
-#   agree.level = 0.95               # LOA agreement level
+#   agree.level = 0.95,              # LOA agreement level
+#   m = 1,                           # Paired measurements per subject
+#   icc = 0                          # ICC of the differences (if m > 1)
 # )
 
-## ----bland_ex1, eval=TRUE-----------------------------------------------------
+## ----bland_ex1, eval=TRUE, fig.alt = "Power curve for the Bland-Altman agreement test, showing power rising with sample size from 10 to 200."----
 # Generate power curve
 pc <- blandPowerCurve(
   samplesizes = seq(10, 200, 1),
@@ -65,7 +85,9 @@ find_n(pc, power = 0.8)
 #   delta = NULL,         # Target expected half-width
 #   pstar = 0.95,        # Central proportion
 #   sigma = 1,           # SD of differences
-#   n = NULL             # Sample size
+#   n = NULL,            # Sample size
+#   m = 1,               # Paired measurements per subject
+#   icc = 0              # ICC of the differences (if m > 1)
 # )
 
 ## ----expected_ex1, eval=TRUE--------------------------------------------------
@@ -85,7 +107,9 @@ print(result)
 #   omega = NULL,          # Target half-width bound
 #   pstar = 0.95,         # Central proportion
 #   sigma = 1,            # SD of differences
-#   n = NULL              # Sample size
+#   n = NULL,             # Sample size
+#   m = 1,                # Paired measurements per subject
+#   icc = 0               # ICC of the differences (if m > 1)
 # )
 
 ## ----assurance_ex1------------------------------------------------------------
@@ -100,64 +124,106 @@ result <- agree_assurance(
 print(result)
 
 ## ----cluster_ex1, eval=TRUE---------------------------------------------------
-# Step 1: Independent sample size
-result <- power_agreement_exact(
+# Independent pairs
+n_indep <- power_agreement_exact(
   delta = 7, mu = 0.5, sigma = 2.5,
   p0_star = 0.95, power = 0.80, alpha = 0.05
+)$n
+n_indep
+
+# 3 pairs per participant
+result <- power_agreement_exact(
+  delta = 7, mu = 0.5, sigma = 2.5,
+  p0_star = 0.95, power = 0.80, alpha = 0.05,
+  m = 3, icc = 0.15
 )
-n_indep <- result$n
-cat("Independent pairs needed:", n_indep, "\n")
+result
 
-# Step 2: Apply design effect
-m <- 3  # 3 measurements per participant
-ICC <- 0.15  # from pilot or literature
-DEFF <- 1 + (m - 1) * ICC
-cat("Design effect:", round(DEFF, 3), "\n")
-
-# Step 3: Calculate participants needed
-n_ess <- ceiling(n_indep * DEFF)
-K <- ceiling(n_ess / m)
-cat("Total observations:", n_ess, "\n")
-cat("Participants needed:", K, "\n")
+## ----cluster_ex1b, eval=TRUE--------------------------------------------------
+agree_expected_half(delta = 2.5, pstar = 0.95, m = 3, icc = 0.15)$n
+agree_assurance(omega = 2.5, assurance = 0.90, pstar = 0.95, m = 3, icc = 0.15)$n
 
 ## ----cluster_ex2, eval=TRUE---------------------------------------------------
-# Compare different ICC values
-n_indep <- 50
+n_indep <- power_agreement_exact(delta = 7, mu = 0.5, sigma = 2.5,
+                                 p0_star = 0.95, power = 0.80)$n
 m <- 4
-
-ICC_values <- c(0, 0.05, 0.10, 0.15, 0.20)
-for (ICC in ICC_values) {
+for (ICC in c(0, 0.05, 0.10, 0.20, 0.40)) {
   DEFF <- 1 + (m - 1) * ICC
-  K <- ceiling(ceiling(n_indep * DEFF) / m)
-  cat(sprintf("ICC = %.2f: Need %d participants\n", ICC, K))
+  K_simple <- ceiling(ceiling(n_indep * DEFF) / m)
+  K_exact <- power_agreement_exact(delta = 7, mu = 0.5, sigma = 2.5,
+                                   p0_star = 0.95, power = 0.80,
+                                   m = m, icc = ICC)$n
+  cat(sprintf("ICC = %.2f: simple DEFF %2d participants, exact %2d\n",
+              ICC, K_simple, K_exact))
 }
+
+## ----cluster_pilot, eval=FALSE------------------------------------------------
+# fit <- lme4::lmer(diff ~ 1 + (1 | id), data = pilot)
+# vc <- as.data.frame(lme4::VarCorr(fit))$vcov  # between, within
+# icc <- vc[1] / sum(vc)
+# sigma <- sqrt(sum(vc))
 
 ## ----cluster_complete, eval=TRUE----------------------------------------------
 # Study parameters
-sigma <- 3.3
+sigma <- 3.3  # total SD of the differences
 delta <- 7
-m <- 4  # measurements per participant
-ICC <- 0.15
-dropout <- 0.20
+m <- 4        # paired measurements per participant
+ICC <- 0.15   # ICC of the differences
+dropout <- 0.20 # expecting 20% dropout
 
-# Step 1: Independent sample size
+# Participants needed
 result <- power_agreement_exact(
   delta = delta, mu = 0, sigma = sigma,
-  p0_star = 0.95, power = 0.80, alpha = 0.05
+  p0_star = 0.95, power = 0.80, alpha = 0.05,
+  m = m, icc = ICC
 )
 
-# Step 2: Account for clustering
-DEFF <- 1 + (m - 1) * ICC
-n_total <- ceiling(result$n * DEFF)
-K_pre <- ceiling(n_total / m)
-
-# Step 3: Account for dropout
-K_final <- ceiling(K_pre / (1 - dropout))
+# Account for dropout
+K_final <- ceiling(result$n / (1 - dropout))
 
 # Summary
-cat("Independent pairs:", result$n, "\n")
-cat("Design effect:", round(DEFF, 3), "\n")
-cat("Participants (no dropout):", K_pre, "\n")
+cat("Participants (no dropout):", result$n, "\n")
 cat("Participants to recruit:", K_final, "\n")
-cat("Total measurements:", K_final * m, "\n")
+cat("Total paired measurements:", K_final * m, "\n")
+
+## ----icc_power----------------------------------------------------------------
+power_icc(rho0 = 0.6, rho1 = 0.8, k = 2, power = 0.80,
+          model = "twoway", alternative = "greater")
+
+## ----icc_power_k--------------------------------------------------------------
+power_icc(n = 20, k = NULL, rho0 = 0.6, rho1 = 0.8, power = 0.80,
+          model = "twoway", alternative = "greater")
+
+## ----icc_power_curve, fig.alt = "Power against number of subjects, from 10 to 80, for testing ICC greater than 0.6, with lines for true ICCs of 0.75 and 0.80 and a gray reference line at 80% power."----
+n_seq <- seq(10, 80, by = 5)
+pw <- sapply(c(0.75, 0.80), function(r1) {
+  sapply(n_seq, function(n) {
+    power_icc(n = n, k = 2, rho0 = 0.6, rho1 = r1, model = "twoway",
+              alternative = "greater")$power
+  })
+})
+matplot(n_seq, pw, type = "l", lty = 1:2, col = 1, ylim = c(0, 1),
+        xlab = "Number of subjects", ylab = "Power")
+abline(h = 0.8, col = "grey")
+legend("bottomright", legend = c("ICC = 0.75", "ICC = 0.80"), lty = 1:2)
+
+## ----icc_precision------------------------------------------------------------
+# Median width of 0.2 around an ICC of 0.8, with three trials
+precision_icc(rho = 0.8, k = 3, width = 0.2, model = "twoway")
+
+# The same width with 80% assurance
+precision_icc(rho = 0.8, k = 3, width = 0.2, assurance = 0.8,
+              model = "twoway")
+
+## ----icc_average--------------------------------------------------------------
+precision_icc(rho = 0.9, k = 3, width = 0.1, assurance = 0.8,
+              model = "twoway", unit = "average")
+
+## ----icc_missing--------------------------------------------------------------
+power_icc(rho0 = 0.6, rho1 = 0.8, k = 2, power = 0.80, model = "twoway",
+          alternative = "greater", missing = 0.15)
+
+## ----icc_approx---------------------------------------------------------------
+power_icc(rho0 = 0.6, rho1 = 0.8, k = 2, power = 0.80,
+          alternative = "greater", method = "approximate")
 
